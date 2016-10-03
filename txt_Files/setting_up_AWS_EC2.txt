@@ -1,0 +1,95 @@
+*note: you should already have a .pem file from AWS. know the location of this file. This .pem file is your key|secret key file
+
+1. Setup an ec2 instance on AWS. Use community AMI that already has anaconda installed on it. Record the Public DNS and Public IP. 
+
+2. Go to your instance and click on Security Groups in the sidebar. Choose your instance and click on Inbound. Then add a Custom TCP Rule with Port Range 8888 and Source 0.0.0.0/0
+
+3. open a terminal and ssh into ec2 instance. 
+ssh -i ~/Downloads/gupta1.pem ec2-user@IP_Address 
+
+#if using a ubuntu machine, use ubuntu instead of ec2-user
+
+4. you can copy files from your computer to your ec2 instance via the following
+#scp -i ~/Downloads/gupta1.pem [path to file] ec2-user@ip_address:/path/to/destitation
+#[-i identity_file]
+scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@52.205.255.138:
+
+5. install the following in your terminal in this order
+
+#install these
+sudo yum update
+sudo yum install -y tmux
+sudo yum install -y pssh
+#sudo yum install -y python27 python27-devel
+sudo yum install -y freetype-devel libpng-devel
+
+#this is needed to prevent RuntimeError: Broken toolchain: cannot link a simple C program
+sudo yum groupinstall "Development Tools" 
+
+#wget https://bootstrap.pypa.io/ez_setup.py -O - | python27
+
+#sudo pip install --upgrade pip
+#sudo easy_install-2.7 pip
+sudo easy_install py4j
+
+sudo pip install ipython==2.0.0
+sudo pip install pyzmq==14.6.0  #ipython notebook needs this
+sudo pip install jinja2==2.7.3  #ipython notebook needs this
+sudo pip install tornado==4.2   #ipython notebook needs this
+
+
+sudo pip install numpy
+sudo pip install scipy
+sudo pip install gensim==0.10.3
+sudo pip install matplotlib
+sudo pip install nltk
+
+
+6. create a new profile in ipython in the ec2 instance
+#ipython profile create [profile_name]
+ipython profile create nbserver
+
+7. modify the config file of your new profile so that you can access ipython notebook from any IP address
+
+cd ~/.ipython/profile_nbserver/ (or whatever you decided to call your profile)
+ipython
+%edit ipython_notebook_config.py 
+
+(under c = get_config(), type the following code)
+c.NotebookApp.ip = '*'
+
+(press insert, then start typing, hit esc to exit insert mode, shift + ;,x ENTER)
+save and quit
+
+8. open ipython notebook
+WATCH OUT: make sure your server is running at "all ip addresses on your system" rather than just 127.0.0.1 (or something like that). You WILL have a bad time.
+
+9. In your browser type 
+#http//Public-DNS:Port
+http://ec2-52-205-255-138.compute-1.amazonaws.com:8888/
+
+
+References
+
+http://cs.smith.edu/dftwiki/index.php/Tutorial:_So_you_want_to_run_your_code_on_Amazon%3F
+
+https://aws.amazon.com/getting-started/tutorials/
+
+http://stackoverflow.com/questions/22759784/numpy-installation-aws-ec2-error
+
+https://github.com/zipfian/spark-aws/blob/master/pair_part1.md
+
+http://www.cyberciti.biz/faq/linux-unix-vim-save-and-quit-command/
+
+https://gist.github.com/iamatypeofwalrus/5183133
+
+http://www.computerhope.com/unix/scp.htm
+
+http://ipython.org/ipython-doc/dev/notebook/public_server.html#running-a-public-notebook-server
+
+
+
+/home/ubuntu/anaconda2/bin/ipython
+
+
+

@@ -1,0 +1,19 @@
+*note: you should already have a .pem file from AWS. know the location of this file. This .pem file is your key|secret key file
+
+1. Setup an ec2 instance on AWS. Use community AMI that already has anaconda installed on it. I choose the kaggle-machine ami-715ccb66. Record the Public DNS and Public IP. 
+
+2. Go to your instance and click on Security Groups in the sidebar. Choose your instance and click on Inbound. Then add a Custom TCP Rule with Port Range 8888 and Source 0.0.0.0/0
+
+3. open a terminal and ssh into ec2 instance. 
+ssh -i ~/Downloads/gupta1.pem ubuntu@IP_Address 
+
+#if using a ubuntu machine, use ubuntu instead of ec2-user
+
+4. you can copy files from your computer to your ec2 instance via the following
+#scp -i ~/Downloads/gupta1.pem [path to file] ec2-user@ip_address:/path/to/destitation
+#[-i identity_file]
+scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@52.205.255.138:
+
+5. in terminal type "pip install gensim==0.10.3" to install gensim
+
+6. upload your script and have fun!!!!!
