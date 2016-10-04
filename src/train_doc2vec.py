@@ -1,25 +1,108 @@
 from gensim.models import Doc2Vec
 from gensim.models.doc2vec import LabeledSentence
 import gensim.models.doc2vec
-from nltk import download
-from nltk.tokenize import RegexpTokenizer
-from nltk.corpus import stopwords
+from nltk.tokenize import PunktSentenceTokenizer
 import pandas as pd
 import cPickle as pickle
 import sqlite3
 import multiprocessing
 import numpy as np
+import time
 
+#############################################################################
+#Tokenizer Functions
 
-def text_cleaner(text):
+def seperatePunct(incomingString):
+    newstring = incomingString
+    newstring = newstring.replace("!"," ! ")
+    newstring = newstring.replace("@"," @ ")
+    newstring = newstring.replace("#"," # ")
+    newstring = newstring.replace("$"," $ ")
+    newstring = newstring.replace("%"," % ")
+    newstring = newstring.replace("^"," ^ ")
+    newstring = newstring.replace("&"," & ")
+    newstring = newstring.replace("*"," * ")
+    newstring = newstring.replace("("," ( ")
+    newstring = newstring.replace(")"," ) ")
+    newstring = newstring.replace("+"," + ")
+    newstring = newstring.replace("="," = ")
+    newstring = newstring.replace("?"," ? ")
+    newstring = newstring.replace("\'"," \' ")
+    newstring = newstring.replace("\""," \" ")
+    newstring = newstring.replace("{"," { ")
+    newstring = newstring.replace("}"," } ")
+    newstring = newstring.replace("["," [ ")
+    newstring = newstring.replace("]"," ] ")
+    newstring = newstring.replace("<"," < ")
+    newstring = newstring.replace(">"," > ")
+    newstring = newstring.replace("~"," ~ ")
+    newstring = newstring.replace("`"," ` ")
+    newstring = newstring.replace(":"," : ")
+    newstring = newstring.replace(";"," ; ")
+    newstring = newstring.replace("|"," | ")
+    newstring = newstring.replace("\\"," \\ ")
+    newstring = newstring.replace("/"," / ")
+    return newstring
+
+def hasNumbers(inputString):
+     return any(char.isdigit() for char in inputString)
+
+def text_cleaner(wordList):
     '''
-    INPUT: string of body text
-    OUTPUT: List of tokenized lower case words with stopwords removed
+    INPUT: List of words to be tokenized
+    OUTPUT: List of tokenized words
     '''
 
-    # Output tokenizes text and removes any stopwords and then outptus lowercased words
-    return [word.lower() for word in tokenizer.tokenize(text) if not word.lower() in stopwords]
+    tokenziedList = []
 
+    for word in wordList:
+
+        #remove these substrings from the word
+        word = word.replace('[deleted]','')
+        word = word.replace('&gt','')
+
+        #if link, replace with linktag
+        if 'http://' in word:
+            tokenziedList.append('LINK_TAG')
+            continue
+
+        #if reference to subreddit, replace with reddittag
+        if '/r/' in word:
+            tokenziedList.append('SUBREDDIT_TAG')
+            continue
+
+        #if reference to reddit user, replace with usertag
+        if '/u/' in word:
+            tokenziedList.append('USER_TAG')
+            continue
+
+        #if number, replace with numtag
+        #m8 is a word, 5'10" and 54-59, 56:48 are numbers
+        if hasNumbers(word) and not any(char.isalpha() for char in word):
+            tokenziedList.append('NUM_TAG')
+            continue
+
+        #seperate puncuations and add to tokenizedList
+        newwords = seperatePunct(word).split(" ")
+        tokenziedList.extend(newwords)
+
+    return tokenziedList
+
+def mytokenizer(comment):
+    '''
+    Input: takes in a reddit comment as a str or unicode and tokenizes it
+    Output: a tokenized list
+    '''
+
+    sentenceList = tokenizer.tokenize(comment)
+    wordList = []
+    for sentence in sentenceList:
+        wordList.extend(sentence.split(" "))
+
+    return text_cleaner(wordList)
+
+#############################################################################
+#Generator Functions
 
 def df_gen(df):
     '''
@@ -30,26 +113,12 @@ def df_gen(df):
     numrows = len(df.index)
     for row in xrange(numrows):
 
-        # try:
-        #     # load a comment
-        #     comment = df.iloc[row,:]
-        #     body = comment['body']
-        #     subreddit = str(comment['subreddit'])
-        #
-        #     # Clean and tokenize text
-        #     body = text_cleaner(body)
-        #
-        #     # generate
-        #     yield LabeledSentence(body,labels=[str(json_object['subreddit'])])
-        # except:
-        #     yield None
-
         comment = df.iloc[row,:]
         body = comment['body']
         subreddit = str(comment['subreddit'])
 
         # Clean and tokenize text
-        body = text_cleaner(body)
+        body = mytokenizer(body)
 
         # generate
         # print "{}: {}".format(numrows,row)
@@ -72,61 +141,77 @@ def sql_gen(c):
         try:
             subreddit = str(comment[0])
             body = comment[1]
-            yield LabeledSentence(body,labels=[str(json_object['subreddit'])])
+            body = mytokenizer(body)
+            yield LabeledSentence(body,labels=['subreddit'])
         except:
             yield None
 
+##############################################################################
+#Model Functions
 
 def build_model(gen_obj):
 
     cores = multiprocessing.cpu_count()
     assert gensim.models.doc2vec.FAST_VERSION > -1
+    print "cores: {}".format(cores)
 
 
-    # d2v_reddit_model = Doc2Vec( dm=0,
-    #                             size=300,
-    #                             window=15,
-    #                             negative=5,
-    #                             hs=0,
-    #                             min_count=2,
-    #                             sample=1e-5,
-    #                             workers=cores)
+    d2v_reddit_model = Doc2Vec( dm=0,
+                                size=300,
+                                window=15,
+                                negative=5,
+                                hs=0,
+                                min_count=2,
+                                sample=1e-5,
+                                workers=cores)
 
 # model below was used for testing script
-    d2v_reddit_model = Doc2Vec( dm=0,
-                                size=3,
-                                window=3,
-                                workers=cores)
+    # d2v_reddit_model = Doc2Vec( dm=0,
+    #                             size=3,
+    #                             window=3,
+    #                             workers=cores)
+
     print "building vocabulary..."
-    d2v_reddit_model.build_vocab(gen_obj) #sentence_gen(reddit_data))
+    t_build_vocab_start = time.time()
+    d2v_reddit_model.build_vocab(df_gen(gen_obj)) #sentence_gen(reddit_data))
+    t_build_vocab_stop = time.time()
+
 
     print "training model..."
+    t_train_model_start = time.time()
     for epoch in xrange(1):
         print "epoch: {}".format(epoch)
-        d2v_reddit_model.train(gen_obj)
+        d2v_reddit_model.train(df_gen(gen_obj))
         d2v_reddit_model.alpha -= 0.002  # decrease the learning rate
         d2v_reddit_model.min_alpha = d2v_reddit_model.alpha  # fix the learning rate, no decay
+    t_train_model_stop = time.time()
+
+    print "build_vocab: {}".format(t_build_vocab_stop - t_build_vocab_start)
+    print "train_model: {}".format(t_train_model_stop - t_train_model_start)
 
     return d2v_reddit_model
 
+###############################################################################
+#Main
 
 if __name__ == '__main__':
-    print "downloading all corpora from nltk..."
-    # download('all-corpora')
-
-    stopwords = stopwords.words('english')
-    stopwords.extend(['[deleted]','[removed]'])
-    tokenizer = RegexpTokenizer(r'\w+')
+    print "starting..."
+    tokenizer = PunktSentenceTokenizer()
 
     path1 = '../../data/labeledRedditComments.p'
     path2 = '../../data/RedditMay2015Comments.sqlite'
 
-    print "creating generator..."
 
     print "loading dataframe..."
+    t_load_df_start = time.time()
     df = pickle.load(open(path1, 'rb'))
-    # dfsmall = df.ix[:100,:]
-    mygen = df_gen(df)
+    t_load_df_stop = time.time()
+
+
+    randNums = np.random.randint(low=0,high=len(df.index),size=(20000,1))
+    rowList = [int(row) for row in randNums]
+    dfsmall = df.ix[rowList,:]
+
 
     # print "connecting to sql database..."
     # conn = sqlite3.connect(path2)
@@ -135,7 +220,12 @@ if __name__ == '__main__':
     # mygen = sql_gen(c)
 
     print "building model..."
-    model = build_model(mygen)
+    t_build_model_start = time.time()
+    model = build_model(dfsmall)
+    t_build_model_stop = time.time()
+
+    print "load df: {}".format(t_load_df_stop - t_load_df_start)
+    print "build_model: {}".format(t_build_model_stop - t_build_model_start)
 
     print "saving model..."
-    model.save('my_model.doc2vec')
+    model.save('../../models/my_model.doc2vec')
