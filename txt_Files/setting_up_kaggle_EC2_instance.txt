@@ -17,3 +17,13 @@ scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@52.205.255.138:
 5. in terminal type "pip install gensim==0.10.3" to install gensim
 
 6. upload your script and have fun!!!!!
+
+
+ssh -i ~/Downloads/gupta1.pem ubuntu@IP_Address 
+
+#put file on aws instance, this is a terminal on my comp
+scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@54.175.28.165:
+
+#get file from aws instance, this is a terminal on my comp
+scp -i ~/Downloads/gupta1.pem ubuntu@54.175.28.165:/home/ubuntu/train_doc2vec_aws.py ./
+
