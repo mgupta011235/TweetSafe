@@ -102,28 +102,43 @@ def mytokenizer(comment):
 #############################################################################
 #similarity code
 
-def mostSimilarDoc(model,comment):
+def mostSimilarDoc(model,comment,k):
     '''
-    Input: doc2vec model, comment is a str
-    Output: the label of the doc most similar to the comment
+    Input: doc2vec model, comment is a str, k = number of similar doc vecs
+    Output: an int indicating hate (1) or not hate (0),most similar subreddit
     '''
 
     docvecs = model.docvecs
+    numdocvec = len(docvecs)
+    simVals = np.zeros((numdocvec, ))
 
+    #tokenize comment
     wordTokens = mytokenizer(comment)
+
+    #create vector of tokenized comment
     commentVec = model.infer_vector(wordTokens)
 
-    mostSimVec = None
-    bestSimVal = None
-
+    #compute similarity of comment to each subreddit
     for vec_ind in xrange(len(docvecs)):
-        simVal = 1 - cosine(commentVec,docvecs[vec_ind])
+        simVals[vec_ind] = 1 - cosine(commentVec,docvecs[vec_ind])
 
-        if simVal>bestSimVal:
-            mostSimVec = vec_ind
-            bestSimVal = simVal
+    mostSimVecInd = np.argsort(simVals)[-k:]
+    hatecount = 0
 
-    return docvecs.index_to_doctag(mostSimVec), bestSimVal
+    #count how many hates there are
+    for index in mostSimVecInd:
+        hatecount += ishateful(docvecs.index_to_doctag(index))
+
+    #majority vote to determine hateful/nothateful
+    if hatecount>=len(mostSimVecInd):
+        prediction = 1
+    else:
+        prediction = 0
+
+    #find most similar subreddit
+    mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
+
+    return prediction,mostSimSubreddit
 
 ##############################################################################
 #hate/NotHate code
@@ -153,7 +168,7 @@ def ishateful(subreddit):
 ##############################################################################
 #testing code
 
-def train_score(model,path,numsamps):
+def train_score(model,path,numsamps,k):
 
     print "loading data..."
     df = pickle.load(open(path, 'rb'))
@@ -171,8 +186,8 @@ def train_score(model,path,numsamps):
 
     print "scoring..."
     for row,comment in enumerate(comments):
-        predictedSub, simVal = mostSimilarDoc(model,comment)
-        predict[row] = ishateful(predictedSub)
+        prediction, predictedSub = mostSimilarDoc(model,comment,k)
+        predict[row] = prediction
 
         if predictedSub == subreddits[row]:
             subredditScore += 1
@@ -202,20 +217,20 @@ def train_score(model,path,numsamps):
     print "FP: {}".format(FP)
 
 
-def test_score(model,path):
+def test_score(model,path,k):
 
-    print "loading data..."
+    # print "loading data..."
     df = pd.read_csv(path)
     tweets = df['tweet_text'].values
     labels = df['label'].values
 
     predict = np.zeros((len(labels),))
 
-    print "scoring..."
+    # print "scoring..."
     for row in xrange(len(labels)):
         tweet = tweets[row]
-        predictedSub, simVal = mostSimilarDoc(model,tweet)
-        predict[row] = ishateful(predictedSub)
+        prediction, predictedSub = mostSimilarDoc(model,tweet,k)
+        predict[row] = prediction
 
     TP = sum(predict+labels == 2)
     TN = sum(predict+labels== 0)
@@ -227,6 +242,7 @@ def test_score(model,path):
     precision = TP/float(TP+FP)
 
     print ""
+    print "k: {}".format(k)
     print "accuracy: {}".format(accu)
     print "recall: {}".format(recall)
     print "precision: {}".format(precision)
@@ -238,26 +254,39 @@ def test_score(model,path):
     print "FN: {}".format(FN)
     print "FP: {}".format(FP)
 
+    #output data to be saved in a pd dataframe
+    return [k,accu,recall,precision,TP,TN,FN,FP]
+
 
 if __name__ == '__main__':
 
     print "starting..."
 
+    #dataset paths
     trainpath = '../../data/labeledRedditComments.p'
     trainpath2 = '../../data/labeledRedditComments2.p'
     cvpath = '../../data/twitter_cross_val.csv'
     testpath = '../../data/twitter_test.csv'
-    path3 = '../../data/RedditMay2015Comments.sqlite'
-    modelPath = '../../models/base_model_original_tokenizer/base_model_original_tokenizer.doc2vec'
+    sqlpath = '../../data/RedditMay2015Comments.sqlite'
+
+    #model paths
+    modelPath = '../../models/basemodel2/basemodel2.doc2vec'
 
     print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
     # print "train set..."
-    # train_score(model,trainpath,None)
+    # train_score(model,trainpath,500,1)
+
+    labels = ['k','accuracy','recall','precision','TP','TN','FN','FP']
+    df = pd.DataFrame(columns=labels)
 
     print "Cross Val set..."
-    test_score(model,cvpath)
+    for k in xrange(26):
+        df.loc[k] = test_score(model,cvpath,k)
+        print ""
+
+    df.to_csv('../../data/varying_K_on_cross_val.csv')
 
     # print "test set..."
-    # test_score(model,testpath)
+    # test_score(model,testpath,1)
