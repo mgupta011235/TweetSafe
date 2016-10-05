@@ -245,15 +245,19 @@ if __name__ == '__main__':
 
     trainpath = '../../data/labeledRedditComments.p'
     trainpath2 = '../../data/labeledRedditComments2.p'
-    testpath = '../../data/twitter-hate-speech-classifier-clean.csv'
+    cvpath = '../../data/twitter_cross_val.csv'
+    testpath = '../../data/twitter_test.csv'
     path3 = '../../data/RedditMay2015Comments.sqlite'
     modelPath = '../../models/base_model_original_tokenizer/base_model_original_tokenizer.doc2vec'
 
     print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
-    print "train set..."
-    train_score(model,trainpath,None)
+    # print "train set..."
+    # train_score(model,trainpath,None)
+
+    print "Cross Val set..."
+    test_score(model,cvpath)
 
     # print "test set..."
     # test_score(model,testpath)

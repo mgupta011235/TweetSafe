@@ -27,3 +27,10 @@ scp -i ~/Downloads/gupta1.pem train_doc2vec_split_only.py ubuntu@52.87.180.28:
 #get file from aws instance, this is a terminal on my comp
 scp -i ~/Downloads/gupta1.pem ubuntu@54.175.28.165:/home/ubuntu/train_doc2vec_aws.py ./
 
+
+scp -i ~/Downloads/gupta1.pem ubuntu@52.87.180.28:/home/ubuntu/models/model* ./
+
+
+
+
+
