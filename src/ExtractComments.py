@@ -19,7 +19,7 @@ final_nothate_srs = ['politics', 'worldnews', 'history', 'blackladies', 'lgbt',
 # List of hateful subreddits
 final_hateful_srs = ['CoonTown', 'WhiteRights', 'Trans_fags', 'SlutJustice',
                      'TheRedPill', 'KotakuInAction', 'IslamUnveiled', 'GasTheKikes',
-                     'AntiPOZi', 'fatpeoplehate', 'TalesofFatHate','hamplanethatred'
+                     'AntiPOZi', 'fatpeoplehate', 'TalesofFatHate','hamplanethatred',
                      'shitniggerssay','neofag','altright']
 
 all_srs = final_hateful_srs + final_nothate_srs
@@ -43,10 +43,10 @@ df.reset_index(drop=True)
 
 
 # Create a not hate label for all entries & write over the hateful labels later
-df['label'] = 'NotHate'
+df['label'] = 0
 
 for subreddit in final_hateful_srs:
-    df.ix[(df.subreddit == subreddit), 'label'] = 'Hate'
+    df.ix[(df.subreddit == subreddit), 'label'] = 1
 
 # # Need to label our comments depending on subreddit.
 # df.ix[(df.subreddit == 'CoonTown'), 'label'] = 'RaceHate'
@@ -68,7 +68,7 @@ print "Done with Hate Categorization"
 
 
 # Let's save this file for later access!
-pickle.dump(df, open('../../data/labeledRedditComments.p', 'wb'))
+pickle.dump(df, open('../../data/labeledRedditComments2.p', 'wb'))
 
 # # To load file:
 # df = pickle.load(open('../../data/labeledRedditComments.p', 'rb'))

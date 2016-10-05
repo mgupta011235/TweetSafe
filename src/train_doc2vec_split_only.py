@@ -99,7 +99,7 @@ def mytokenizer(comment):
     for sentence in sentenceList:
         wordList.extend(sentence.split(" "))
 
-    return text_cleaner(wordList)
+    return wordList
 
 #############################################################################
 #Generator Functions
@@ -203,14 +203,13 @@ if __name__ == '__main__':
     print "starting..."
     tokenizer = PunktSentenceTokenizer()
 
-    path = '../../data/labeledRedditComments2.p'
     path1 = '../../data/labeledRedditComments.p'
     path2 = '../../data/RedditMay2015Comments.sqlite'
 
 
     print "loading dataframe..."
     t_load_df_start = time.time()
-    df = pickle.load(open(path, 'rb'))
+    df = pickle.load(open(path1, 'rb'))
     t_load_df_stop = time.time()
 
 
@@ -234,4 +233,4 @@ if __name__ == '__main__':
     print "build_model: {}".format(t_build_model_stop - t_build_model_start)
 
     print "saving model..."
-    model.save('../../models/basemodel2.doc2vec')
+    model.save('../../models/model_split.doc2vec')

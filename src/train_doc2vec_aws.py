@@ -152,12 +152,12 @@ def sql_gen(c):
 def build_model(gen_obj):
 
     cores = multiprocessing.cpu_count()
-    # print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
-    # assert gensim.models.doc2vec.FAST_VERSION > -1
-    # print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
+    print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
+    assert gensim.models.doc2vec.FAST_VERSION > -1
+    print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
     print "cores: {}".format(cores)
 
-    workers = cores
+    workers = 1
     print "workers: {}".format(workers)
 
 
@@ -184,7 +184,7 @@ def build_model(gen_obj):
 
     print "training model..."
     t_train_model_start = time.time()
-    for epoch in xrange(10):
+    for epoch in xrange(1):
         print "epoch: {}".format(epoch)
         d2v_reddit_model.train(df_gen(gen_obj))
         d2v_reddit_model.alpha -= 0.002  # decrease the learning rate
@@ -203,20 +203,19 @@ if __name__ == '__main__':
     print "starting..."
     tokenizer = PunktSentenceTokenizer()
 
-    path = '../../data/labeledRedditComments2.p'
-    path1 = '../../data/labeledRedditComments.p'
-    path2 = '../../data/RedditMay2015Comments.sqlite'
+    path1 = 'labeledRedditComments.p'
+    path2 = 'RedditMay2015Comments.sqlite'
 
 
     print "loading dataframe..."
     t_load_df_start = time.time()
-    df = pickle.load(open(path, 'rb'))
+    df = pickle.load(open(path1, 'rb'))
     t_load_df_stop = time.time()
 
 
-    # randNums = np.random.randint(low=0,high=len(df.index),size=(20000,1))
-    # rowList = [int(row) for row in randNums]
-    # dfsmall = df.ix[rowList,:]
+    randNums = np.random.randint(low=0,high=len(df.index),size=(200,1))
+    rowList = [int(row) for row in randNums]
+    dfsmall = df.ix[rowList,:]
 
 
     # print "connecting to sql database..."
@@ -227,11 +226,11 @@ if __name__ == '__main__':
 
     print "building model..."
     t_build_model_start = time.time()
-    model = build_model(df)
+    model = build_model(dfsmall)
     t_build_model_stop = time.time()
 
     print "load df: {}".format(t_load_df_stop - t_load_df_start)
     print "build_model: {}".format(t_build_model_stop - t_build_model_start)
 
     print "saving model..."
-    model.save('../../models/basemodel2.doc2vec')
+    model.save('model.doc2vec')
