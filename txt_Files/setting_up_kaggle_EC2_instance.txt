@@ -19,10 +19,10 @@ scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@52.205.255.138:
 6. upload your script and have fun!!!!!
 
 
-ssh -i ~/Downloads/gupta1.pem ubuntu@IP_Address 
+ssh -i ~/Downloads/gupta1.pem ubuntu@52.87.157.133
 
 #put file on aws instance, this is a terminal on my comp
-scp -i ~/Downloads/gupta1.pem train_doc2vec_split_only.py ubuntu@52.87.180.28:
+scp -i ~/Downloads/gupta1.pem train_doc2vec_aws.py ubuntu@52.91.230.207:
 
 #get file from aws instance, this is a terminal on my comp
 scp -i ~/Downloads/gupta1.pem ubuntu@54.175.28.165:/home/ubuntu/train_doc2vec_aws.py ./

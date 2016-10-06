@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import cPickle as pickle
 from scipy.spatial.distance import cosine
 from nltk.tokenize import PunktSentenceTokenizer
+import time
 
 ###########################################################################
 # tokenization code
@@ -84,7 +85,7 @@ def mytokenizer(comment):
 #############################################################################
 #similarity code
 
-def mostSimilarDoc(model,comment,k):
+def mostSimilarDoc(model,comment,k,threshold):
     '''
     Input: doc2vec model, comment is a str, k = number of similar doc vecs
     Output: an int indicating hate (1) or not hate (0),most similar subreddit
@@ -116,7 +117,6 @@ def mostSimilarDoc(model,comment,k):
         hatecount += ishateful(docvecs.index_to_doctag(index))
 
     #majority vote to determine hateful/nothateful
-    threshold = 0.5 #threhold for majority vote
     if hatecount>=threshold*len(mostSimVecInd):
         prediction = 1
     else:
@@ -152,59 +152,10 @@ def ishateful(subreddit):
     else:
         return 0
 
-##############################################################################
-#testing code
+#############################################################################
+#scoring code
 
-def train_score(model,path,numsamps,k):
-
-    print "loading data..."
-    df = pickle.load(open(path, 'rb'))
-
-    if not numsamps:
-        numsamps = len(df.index)
-
-    randrows = random.sample(xrange(len(df.index)), numsamps)
-    comments = df.ix[randrows,'body'].values
-    subreddits = df.ix[randrows,'subreddit'].values
-    subredditScore = 0
-
-    labels = df['label'].values
-    predict = np.zeros((len(labels),))
-
-    print "scoring..."
-    for row,comment in enumerate(comments):
-        prediction, predictedSub = mostSimilarDoc(model,comment,k)
-        predict[row] = prediction
-
-        if predictedSub == subreddits[row]:
-            subredditScore += 1
-
-    print ""
-    print "subredditScore: {}".format(subredditScore/float(numsamps))
-
-    TP = sum(predict+labels == 2)
-    TN = sum(predict+labels== 0)
-    FP = sum(predict-labels == 1)
-    FN = sum(predict-labels== -1)
-
-    accu = (TP+TN)/float(len(labels))
-    recall = TP/float(TP+FN)
-    precision = TP/float(TP+FP)
-
-    print ""
-    print "accuracy: {}".format(accu)
-    print "recall: {}".format(recall)
-    print "precision: {}".format(precision)
-
-    print ""
-    print "TP: {}".format(TP)
-    print "TN: {}".format(TN)
-    print ""
-    print "FN: {}".format(FN)
-    print "FP: {}".format(FP)
-
-
-def test_score(model,path,k):
+def test_score(model,path,k,threshold):
 
     # print "loading data..."
     df = pd.read_csv(path)
@@ -216,7 +167,7 @@ def test_score(model,path,k):
     # print "scoring..."
     for row in xrange(len(labels)):
         tweet = tweets[row]
-        prediction, predictedSub = mostSimilarDoc(model,tweet,k)
+        prediction, predictedSub = mostSimilarDoc(model,tweet,k,threshold)
         predict[row] = prediction
 
     TP = sum(predict+labels == 2)
@@ -230,6 +181,7 @@ def test_score(model,path,k):
 
     print ""
     print "k: {}".format(k)
+    print "threshold: {}".format(threshold)
     print "accuracy: {}".format(accu)
     print "recall: {}".format(recall)
     print "precision: {}".format(precision)
@@ -242,8 +194,10 @@ def test_score(model,path,k):
     print "FP: {}".format(FP)
 
     #output data to be saved in a pd dataframe
-    return [k,accu,recall,precision,TP,TN,FN,FP]
+    return [k,threshold,accu,recall,precision,TP,TN,FN,FP]
 
+##############################################################################
+#Main
 
 if __name__ == '__main__':
 
@@ -263,21 +217,21 @@ if __name__ == '__main__':
     print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
-    # print "train set..."
-    # train_score(model,trainpath,100000,2)
 
-    # labels = ['k','accuracy','recall','precision','TP','TN','FN','FP']
-    # df = pd.DataFrame(columns=labels)
-    #
-    # print "Cross Val set..."
-    # for k in xrange(26):
-    #     df.loc[k] = test_score(model,cvpath,k)
-    #     print ""
-    #
-    # df.to_csv('../../data/varying_K_on_cross_val.csv')
+    labels = ['k','threshold','accuracy','recall','precision','TP','TN','FN','FP']
+    df = pd.DataFrame(columns=labels)
 
-    print "Cross Val set..."
-    test_score(model,cvpath,3)
+    tstart = time.time()
+    print "gridsearch..."
+    for k in xrange(1,26):
+        for threshold in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]:
+            df.loc[k] = test_score(model,cvpath,k,threshold)
+            print ""
+    tstop = time.time()
 
-    # print "test set..."
-    # test_score(model,testpath,1)
+    dt = tstop-tstart
+
+    print "total time: {}".format(dt)
+    print "time per gridpoint: {}".format(dt/250.0)
+
+    df.to_csv('../../data/gridsearch_on_cross_val.csv')

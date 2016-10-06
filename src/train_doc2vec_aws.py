@@ -13,36 +13,18 @@ import time
 #Tokenizer Functions
 
 def seperatePunct(incomingString):
-    newstring = incomingString
-    newstring = newstring.replace("!"," ! ")
-    newstring = newstring.replace("@"," @ ")
-    newstring = newstring.replace("#"," # ")
-    newstring = newstring.replace("$"," $ ")
-    newstring = newstring.replace("%"," % ")
-    newstring = newstring.replace("^"," ^ ")
-    newstring = newstring.replace("&"," & ")
-    newstring = newstring.replace("*"," * ")
-    newstring = newstring.replace("("," ( ")
-    newstring = newstring.replace(")"," ) ")
-    newstring = newstring.replace("+"," + ")
-    newstring = newstring.replace("="," = ")
-    newstring = newstring.replace("?"," ? ")
-    newstring = newstring.replace("\'"," \' ")
-    newstring = newstring.replace("\""," \" ")
-    newstring = newstring.replace("{"," { ")
-    newstring = newstring.replace("}"," } ")
-    newstring = newstring.replace("["," [ ")
-    newstring = newstring.replace("]"," ] ")
-    newstring = newstring.replace("<"," < ")
-    newstring = newstring.replace(">"," > ")
-    newstring = newstring.replace("~"," ~ ")
-    newstring = newstring.replace("`"," ` ")
-    newstring = newstring.replace(":"," : ")
-    newstring = newstring.replace(";"," ; ")
-    newstring = newstring.replace("|"," | ")
-    newstring = newstring.replace("\\"," \\ ")
-    newstring = newstring.replace("/"," / ")
-    return newstring
+    outstr = ''
+    characters = set(['!','@','#','$',"%","^","&","*",":","\\",
+                  "(",")","+","=","?","\'","\"",";","/",
+                  "{","}","[","]","<",">","~","`","|"])
+
+    for char in incomingString:
+        if char in characters:
+            outstr = outstr + ' ' + char + ' '
+        else:
+            outstr = outstr + char
+
+    return outstr
 
 def hasNumbers(inputString):
      return any(char.isdigit() for char in inputString)
@@ -97,6 +79,7 @@ def mytokenizer(comment):
     sentenceList = tokenizer.tokenize(comment)
     wordList = []
     for sentence in sentenceList:
+        sentence = sentence.lower()
         wordList.extend(sentence.split(" "))
 
     return text_cleaner(wordList)
@@ -142,7 +125,7 @@ def sql_gen(c):
             subreddit = str(comment[0])
             body = comment[1]
             body = mytokenizer(body)
-            yield LabeledSentence(body,labels=['subreddit'])
+            yield LabeledSentence(body,tags=['subreddit'])
         except:
             yield []
 
@@ -152,12 +135,11 @@ def sql_gen(c):
 def build_model(gen_obj):
 
     cores = multiprocessing.cpu_count()
-    print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
     assert gensim.models.doc2vec.FAST_VERSION > -1
-    print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
+
     print "cores: {}".format(cores)
 
-    workers = 1
+    workers = cores
     print "workers: {}".format(workers)
 
 
@@ -184,7 +166,7 @@ def build_model(gen_obj):
 
     print "training model..."
     t_train_model_start = time.time()
-    for epoch in xrange(1):
+    for epoch in xrange(10):
         print "epoch: {}".format(epoch)
         d2v_reddit_model.train(df_gen(gen_obj))
         d2v_reddit_model.alpha -= 0.002  # decrease the learning rate
@@ -203,7 +185,7 @@ if __name__ == '__main__':
     print "starting..."
     tokenizer = PunktSentenceTokenizer()
 
-    path1 = 'labeledRedditComments.p'
+    path1 = 'labeledRedditComments2.p'
     path2 = 'RedditMay2015Comments.sqlite'
 
 
@@ -213,9 +195,9 @@ if __name__ == '__main__':
     t_load_df_stop = time.time()
 
 
-    randNums = np.random.randint(low=0,high=len(df.index),size=(200,1))
-    rowList = [int(row) for row in randNums]
-    dfsmall = df.ix[rowList,:]
+    # randNums = np.random.randint(low=0,high=len(df.index),size=(200,1))
+    # rowList = [int(row) for row in randNums]
+    # dfsmall = df.ix[rowList,:]
 
 
     # print "connecting to sql database..."
@@ -226,11 +208,11 @@ if __name__ == '__main__':
 
     print "building model..."
     t_build_model_start = time.time()
-    model = build_model(dfsmall)
+    model = build_model(df)
     t_build_model_stop = time.time()
 
     print "load df: {}".format(t_load_df_stop - t_load_df_start)
     print "build_model: {}".format(t_build_model_stop - t_build_model_start)
 
     print "saving model..."
-    model.save('model.doc2vec')
+    model.save('models/modellower.doc2vec')
