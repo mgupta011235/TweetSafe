@@ -44,7 +44,7 @@ def text_cleaner(wordList):
         word = word.replace('&gt','')
 
         #if link, replace with linktag
-        if 'http://' in word:
+        if 'http' in word:
             tokenziedList.append('LINK_TAG')
             continue
 
@@ -55,6 +55,11 @@ def text_cleaner(wordList):
 
         #if reference to reddit user, replace with usertag
         if '/u/' in word:
+            tokenziedList.append('USER_TAG')
+            continue
+
+        #if reference to twitter user, replace with usertag
+        if '@' in word:
             tokenziedList.append('USER_TAG')
             continue
 
@@ -76,6 +81,7 @@ def mytokenizer(comment):
     Output: a tokenized list
     '''
 
+    tokenizer = PunktSentenceTokenizer()
     sentenceList = tokenizer.tokenize(comment)
     wordList = []
     for sentence in sentenceList:
@@ -183,7 +189,6 @@ def build_model(gen_obj):
 
 if __name__ == '__main__':
     print "starting..."
-    tokenizer = PunktSentenceTokenizer()
 
     path1 = 'labeledRedditComments2.p'
     path2 = 'RedditMay2015Comments.sqlite'

@@ -43,7 +43,7 @@ def text_cleaner(wordList):
         word = word.replace('&gt','')
 
         #if link, replace with linktag
-        if 'http://' in word:
+        if 'http' in word:
             tokenziedList.append('LINK_TAG')
             continue
 
@@ -54,6 +54,11 @@ def text_cleaner(wordList):
 
         #if reference to reddit user, replace with usertag
         if '/u/' in word:
+            tokenziedList.append('USER_TAG')
+            continue
+
+        #if reference to twitter user, replace with usertag
+        if '@' in word:
             tokenziedList.append('USER_TAG')
             continue
 
@@ -211,7 +216,8 @@ if __name__ == '__main__':
     sqlpath = '../../data/RedditMay2015Comments.sqlite'
 
     #model paths
-    modelPath = '../../models/basemodel2/basemodel2.doc2vec'
+    # modelPath = '../../models/basemodel2/basemodel2.doc2vec'
+    modelPath = '../../models/modellower/modellower.doc2vec'
     # modelPath = '../../models/model_split/model_split.doc2vec'
 
     print "loading model..."
@@ -223,15 +229,18 @@ if __name__ == '__main__':
 
     tstart = time.time()
     print "gridsearch..."
-    for k in xrange(1,26):
+    count = 0
+    for k in xrange(1,12):
         for threshold in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]:
-            df.loc[k] = test_score(model,cvpath,k,threshold)
+            print "count: {}".format(count)
+            df.loc[count] = test_score(model,cvpath,k,threshold)
+            count+=1
             print ""
     tstop = time.time()
 
     dt = tstop-tstart
 
     print "total time: {}".format(dt)
-    print "time per gridpoint: {}".format(dt/250.0)
+    print "time per gridpoint: {}".format(dt/float(count))
 
-    df.to_csv('../../data/gridsearch_on_cross_val.csv')
+    df.to_csv('../../data/gridsearch_modellower_on_cross_val.csv')

@@ -19,7 +19,7 @@ scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@52.205.255.138:
 6. upload your script and have fun!!!!!
 
 
-ssh -i ~/Downloads/gupta1.pem ubuntu@52.87.157.133
+ssh -i ~/Downloads/gupta1.pem ubuntu@54.158.253.209
 
 #put file on aws instance, this is a terminal on my comp
 scp -i ~/Downloads/gupta1.pem train_doc2vec_aws.py ubuntu@52.91.230.207:
@@ -28,9 +28,10 @@ scp -i ~/Downloads/gupta1.pem train_doc2vec_aws.py ubuntu@52.91.230.207:
 scp -i ~/Downloads/gupta1.pem ubuntu@54.175.28.165:/home/ubuntu/train_doc2vec_aws.py ./
 
 
-scp -i ~/Downloads/gupta1.pem ubuntu@52.87.180.28:/home/ubuntu/models/model* ./
+scp -i ~/Downloads/gupta1.pem ubuntu@52.87.157.133:/home/ubuntu/models/modellower* ./
 
+scp -i ~/Downloads/gupta1.pem ubuntu@52.87.157.133:/home/ubuntu/gridsearch_on_cross_val.csv ./gridsearch_basemodel2_on_cross_val.csv
 
-
+scp -i ~/Downloads/gupta1.pem twitter_cross_val.csv ubuntu@54.158.253.209:
 
 

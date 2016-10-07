@@ -42,7 +42,7 @@ def text_cleaner(wordList):
         word = word.replace('&gt','')
 
         #if link, replace with linktag
-        if 'http://' in word:
+        if 'http' in word:
             tokenziedList.append('LINK_TAG')
             continue
 
@@ -53,6 +53,11 @@ def text_cleaner(wordList):
 
         #if reference to reddit user, replace with usertag
         if '/u/' in word:
+            tokenziedList.append('USER_TAG')
+            continue
+
+        #if reference to twitter user, replace with usertag
+        if '@' in word:
             tokenziedList.append('USER_TAG')
             continue
 
@@ -73,6 +78,7 @@ def mytokenizer(comment):
     Input: takes in a reddit comment as a str or unicode and tokenizes it
     Output: a tokenized list
     '''
+
     tokenizer = PunktSentenceTokenizer()
     sentenceList = tokenizer.tokenize(comment)
     wordList = []
@@ -84,7 +90,7 @@ def mytokenizer(comment):
 #############################################################################
 #similarity code
 
-def mostSimilarDoc(model,comment,k):
+def mostSimilarDoc(model,comment,k,threshold):
     '''
     Input: doc2vec model, comment is a str, k = number of similar doc vecs
     Output: an int indicating hate (1) or not hate (0),most similar subreddit
@@ -116,7 +122,6 @@ def mostSimilarDoc(model,comment,k):
         hatecount += ishateful(docvecs.index_to_doctag(index))
 
     #majority vote to determine hateful/nothateful
-    threshold = 0.5 #threhold for majority vote
     if hatecount>=threshold*len(mostSimVecInd):
         prediction = 1
     else:
@@ -155,7 +160,7 @@ def ishateful(subreddit):
 ##############################################################################
 #testing code
 
-def train_score(model,path,numsamps,k):
+def train_score(model,path,numsamps,k,threshold):
 
     print "loading data..."
     df = pickle.load(open(path, 'rb'))
@@ -173,7 +178,7 @@ def train_score(model,path,numsamps,k):
 
     print "scoring..."
     for row,comment in enumerate(comments):
-        prediction, predictedSub = mostSimilarDoc(model,comment,k)
+        prediction, predictedSub = mostSimilarDoc(model,comment,k,threshold)
         predict[row] = prediction
 
         if predictedSub == subreddits[row]:
@@ -204,7 +209,7 @@ def train_score(model,path,numsamps,k):
     print "FP: {}".format(FP)
 
 
-def test_score(model,path,k):
+def test_score(model,path,k,threshold):
 
     # print "loading data..."
     df = pd.read_csv(path)
@@ -216,7 +221,7 @@ def test_score(model,path,k):
     # print "scoring..."
     for row in xrange(len(labels)):
         tweet = tweets[row]
-        prediction, predictedSub = mostSimilarDoc(model,tweet,k)
+        prediction, predictedSub = mostSimilarDoc(model,tweet,k,threshold)
         predict[row] = prediction
 
     TP = sum(predict+labels == 2)
@@ -230,6 +235,7 @@ def test_score(model,path,k):
 
     print ""
     print "k: {}".format(k)
+    print "threshold: {}".format(threshold)
     print "accuracy: {}".format(accu)
     print "recall: {}".format(recall)
     print "precision: {}".format(precision)
@@ -242,7 +248,7 @@ def test_score(model,path,k):
     print "FP: {}".format(FP)
 
     #output data to be saved in a pd dataframe
-    return [k,accu,recall,precision,TP,TN,FN,FP]
+    return [k,threshold,accu,recall,precision,TP,TN,FN,FP]
 
 
 if __name__ == '__main__':
@@ -258,6 +264,7 @@ if __name__ == '__main__':
 
     #model paths
     modelPath = '../../models/basemodel2/basemodel2.doc2vec'
+    # modelPath = '../../models/modellower/modellower.doc2vec'
     # modelPath = '../../models/model_split/model_split.doc2vec'
 
     print "loading model..."
@@ -266,18 +273,8 @@ if __name__ == '__main__':
     # print "train set..."
     # train_score(model,trainpath,100000,2)
 
-    # labels = ['k','accuracy','recall','precision','TP','TN','FN','FP']
-    # df = pd.DataFrame(columns=labels)
-    #
-    # print "Cross Val set..."
-    # for k in xrange(26):
-    #     df.loc[k] = test_score(model,cvpath,k)
-    #     print ""
-    #
-    # df.to_csv('../../data/varying_K_on_cross_val.csv')
-
     print "Cross Val set..."
-    test_score(model,cvpath,3)
+    test_score(model,cvpath,3,1)
 
     # print "test set..."
     # test_score(model,testpath,1)
