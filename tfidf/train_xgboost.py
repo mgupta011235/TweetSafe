@@ -181,16 +181,23 @@ def main():
              'objective':'binary:logistic',
              'eval_metric':'auc'
              }
-
+    #number of boosted rounds
     num_round = 1
-    # watchlist = [(xg_train, 'train')]
+
+    # what to apply the eval metric to
+    # what the eval metric on these as you train to obj
     watchlist = [(xg_train, 'train'), (xg_cv, 'eval')]
+
+    #dict with the results of the model on the eval_metric
+    results = dict()
 
     #train model
     model = xgb.train(param,
                       xg_train,
                       num_round,
-                      watchlist)
+                      watchlist,
+                      evals_result=results, #store eval results in results dic
+                      verbose_eval=False)   #dont print output to screen
     train_tstop = time.time()
 
     print "saving model..."
