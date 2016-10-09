@@ -128,9 +128,9 @@ def mostSimilarDoc(model,comment,k,threshold):
         prediction = 0
 
     #find most similar subreddit
-    mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
+    # mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
 
-    return prediction,mostSimSubreddit
+    return prediction
 
 ##############################################################################
 #hate/NotHate code
@@ -172,13 +172,13 @@ def test_score(model,path,k,threshold):
     # print "scoring..."
     for row in xrange(len(labels)):
         tweet = tweets[row]
-        prediction, predictedSub = mostSimilarDoc(model,tweet,k,threshold)
+        prediction = mostSimilarDoc(model,tweet,k,threshold)
         predict[row] = prediction
 
     TP = sum(predict+labels == 2)
-    TN = sum(predict+labels== 0)
+    TN = sum(predict+labels == 0)
     FP = sum(predict-labels == 1)
-    FN = sum(predict-labels== -1)
+    FN = sum(predict-labels == -1)
 
     accu = (TP+TN)/float(len(labels))
     recall = TP/float(TP+FN)
@@ -216,26 +216,29 @@ if __name__ == '__main__':
     sqlpath = '../../data/RedditMay2015Comments.sqlite'
 
     #model paths
-    # modelPath = '../../models/basemodel2/basemodel2.doc2vec'
-    modelPath = '../../models/modellower/modellower.doc2vec'
-    # modelPath = '../../models/model_split/model_split.doc2vec'
+    modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
+    # modelPath = '../../doc2vec_models/basemodel3/basemodel3.doc2vec'
+    # modelPath = '../../doc2vec_models/basemodel4/basemodel4.doc2vec'
+    # modelPath = '../../doc2vec_models/modellower/modellower.doc2vec'
+    # modelPath = '../../doc2vec_models/model_split/model_split.doc2vec'
 
     print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
-
-    labels = ['k','threshold','accuracy','recall','precision','TP','TN','FN','FP']
-    df = pd.DataFrame(columns=labels)
-
     tstart = time.time()
     print "gridsearch..."
+    results = []
     count = 0
-    for k in xrange(1,12):
-        for threshold in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]:
+    for k in xrange(11,12):
+        for threshold in [0.61,0.62,0.63,0.64,0.65,0.66,0.67,0.68,0.69,0.7]:
             print "count: {}".format(count)
-            df.loc[count] = test_score(model,cvpath,k,threshold)
+            results.append(test_score(model,cvpath,k,threshold))
             count+=1
             print ""
+
+    labels = ['k','threshold','accuracy','recall','precision','TP','TN','FN','FP']
+    df = pd.DataFrame(data=results,columns=labels)
+
     tstop = time.time()
 
     dt = tstop-tstart
@@ -243,4 +246,4 @@ if __name__ == '__main__':
     print "total time: {}".format(dt)
     print "time per gridpoint: {}".format(dt/float(count))
 
-    df.to_csv('../../data/gridsearch_modellower_on_cross_val.csv')
+    df.to_csv('../../data/gridsearch_modelbase2mini_on_cross_val.csv')

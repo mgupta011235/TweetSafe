@@ -171,7 +171,7 @@ def build_model(gen_obj):
 
     print "training model..."
     t_train_model_start = time.time()
-    for epoch in xrange(7):
+    for epoch in xrange(9):
         print "epoch: {}".format(epoch)
         d2v_reddit_model.train(df_gen(gen_obj))
         d2v_reddit_model.alpha -= 0.002  # decrease the learning rate
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     print "starting..."
 
     path = '../../data/labeledRedditComments2.p'
-    path1 = '../../data/labeledRedditComments.p'
+    # path1 = '../../data/labeledRedditComments.p'
     path2 = '../../data/RedditMay2015Comments.sqlite'
 
 
@@ -220,4 +220,4 @@ if __name__ == '__main__':
     print "build_model: {}".format(t_build_model_stop - t_build_model_start)
 
     print "saving model..."
-    model.save('../../doc2vec_models/basemodel4/basemodel4.doc2vec')
+    model.save('../../doc2vec_models/basemodel5/basemodel5.doc2vec')

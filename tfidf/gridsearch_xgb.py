@@ -124,44 +124,34 @@ def mytokenize(comment):
 ##############################################################################
 #main
 
-def search(tfidf_X,y,tfidf_Xcv,ycv,paramlist,i):
+def search(xg_train,xg_cv,paramlist,i):
 
     print "start i: ", i
     print ""
 
-    #data conversion to DMatrix
-    # xg_train = xgb.DMatrix(tfidf_X, label=y)
-    # xg_cv = xgb.DMatrix(tfidf_Xcv.todense(), label=ycv)
 
-    evalSet = zip(tfidf_Xcv,ycv)
 
     #parameters
-    # param = {'max_depth':paramlist[1],
-    #          'eta':paramlist[2],
-    #          'silent':1,
-    #          'objective':'binary:logistic',
-    #          'eval_metric':'auc'
-    #          }
-    #
-    # num_round = paramlist[0]
-    # watchlist = [(xg_train, 'train'), (xg_cv, 'eval')]
+    param = {'max_depth':paramlist[1],
+             'eta':paramlist[2],
+             'silent':1,
+             'objective':'binary:logistic',
+             'eval_metric':'auc'
+             }
 
-    #create model
-    model = xgb.XGBClassifier(max_depth = paramlist[1],
-                              n_estimators = paramlist[0],
-                              learning_rate = paramlist[2])
+    num_round = paramlist[0]
+    watchlist = [(xg_train, 'train'), (xg_cv, 'eval')]
 
-    model.fit(tfidf_X,y,eval_set = evalSet, eval_metric = 'auc')
+    #create dictionary to store eval results
+    results = dict()
 
-    results = model.evals_result()
-
-
-    # model = xgb.train(param,
-    #                   xg_train,
-    #                   num_round,
-    #                   watchlist,
-    #                   evals_result=results,
-    #                   verbose_eval=False)
+    #train model
+    model = xgb.train(param,
+                      xg_train,
+                      num_round,
+                      watchlist,
+                      evals_result=results,
+                      verbose_eval=False)
 
     print "finish i: ", i
     print ""
@@ -174,8 +164,8 @@ if __name__ == '__main__':
 
     print "entering main..."
 
-    path = 'labeledRedditComments2.p'
-    cvpath = 'twitter_cross_val.csv'
+    path = '../../data/labeledRedditComments2.p'
+    cvpath = '../../data/twitter_cross_val.csv'
 
     load_tstart = time.time()
     print 'loading data...'
@@ -184,11 +174,11 @@ if __name__ == '__main__':
     load_tstop = time.time()
 
     #take a subset of the data for testing this code
-    # randNums = np.random.randint(low=0,high=len(df.index),size=(10,1))
-    # rowList = [int(row) for row in randNums]
-    # dfsmall = df.ix[rowList,:]
+    randNums = np.random.randint(low=0,high=len(df.index),size=(100,1))
+    rowList = [int(row) for row in randNums]
+    dfsmall = df.ix[rowList,:]
 
-    nf = df
+    nf = dfsmall
 
     #create training set and labels
     X = nf.body
@@ -207,29 +197,29 @@ if __name__ == '__main__':
     tfidf_Xcv = vect.transform(Xcv)
     vect_tstop = time.time()
 
-    # develop data to train model
-    # .todense() b/c otherwise DMatrix conversion will drop cols b/c in a
-    # sparse matrix, a col with all 0's doesn't exist
-    xg_train = xgb.DMatrix(tfidf_X, label=y)
-    xg_cv = xgb.DMatrix(tfidf_Xcv.todense(), label=ycv)
+    print "converting data..."
+    #convert to dense so that DMatrix doesn't drop cols with all zeros
+    tfidf_Xcvd = tfidf_Xcv.todense()
 
-    print 'creating paramlist...'
-    paramlist = []
+    #data conversion to DMatrix
+    xg_train = xgb.DMatrix(tfidf_X, label=y)
+    xg_cv = xgb.DMatrix(tfidf_Xcvd, label=ycv)
+
+
+
+    print 'gridsearching...'
+    grid_tstart = time.time()
+    results = []
+    i = 0
     for eta in [0.03,0.06,0.09,0.3,0.6,0.9]:
         for max_depth in [3,4,5,6]:
             for num_rounds in [100,300,600,900]:
-                paramlist.append([num_rounds,max_depth,eta])
+                params = [num_rounds,max_depth,eta]
+                results.append(search(xg_train,xg_cv,paramlist,i))
+                i+=1
 
-    #find num of cores
-    cores = mp.cpu_count()
-
-    #create pool for multiprocessing
-    pool = mp.Pool(processes=cores)
-
-    print "gridsearching..."
-    grid_tstart = time.time()
-    results = [pool.apply(search, args=(tfidf_X,y,tfidf_Xcv,ycv,param,i)) for i,param in enumerate(paramlist)]
     grid_tstop = time.time()
+
 
     #save data to dataframe
     labels = ['num_rounds','max_depth','eta','eval_results']

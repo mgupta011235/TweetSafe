@@ -217,7 +217,8 @@ if __name__ == '__main__':
 
     #model paths
     # modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
-    modelPath = '../../doc2vec_models/basemodel3/basemodel3.doc2vec'
+    # modelPath = '../../doc2vec_models/basemodel3/basemodel3.doc2vec'
+    modelPath = '../../doc2vec_models/basemodel4/basemodel4.doc2vec'
     # modelPath = '../../doc2vec_models/modellower/modellower.doc2vec'
     # modelPath = '../../doc2vec_models/model_split/model_split.doc2vec'
 
@@ -245,4 +246,4 @@ if __name__ == '__main__':
     print "total time: {}".format(dt)
     print "time per gridpoint: {}".format(dt/float(count))
 
-    df.to_csv('../../data/gridsearch_modelbase3_on_cross_val.csv')
+    df.to_csv('../../data/gridsearch_modelbase4_on_cross_val.csv')

@@ -262,19 +262,20 @@ if __name__ == '__main__':
     sqlpath = '../../data/RedditMay2015Comments.sqlite'
 
     #model paths
-    modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
+    # modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
     # modelPath = '../../doc2vec_models/basemodel3/basemodel3.doc2vec'
+    modelPath = '../../doc2vec_models/basemodel4/basemodel4.doc2vec'
     # modelPath = '../../doc2vec_models/modellower/modellower.doc2vec'
     # modelPath = '../../doc2vec_models/model_split/model_split.doc2vec'
 
     print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
-    # print "train set..."
-    # train_score(model,trainpath,100000,2)
+    #score model on training set
+    train_score(model,trainpath,30000,11,0.63)
 
-    print "scoring..."
-    test_score(model,cvpath,11,0.6)
+    # print "scoring..."
+    # test_score(model,cvpath,11,0.63)
 
     # print "test set..."
     # test_score(model,testpath,1)
