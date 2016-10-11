@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import cPickle as pickle
 from scipy.spatial.distance import cosine
 from nltk.tokenize import PunktSentenceTokenizer
-import time
 
 ###########################################################################
 # tokenization code
@@ -136,9 +135,9 @@ def mostSimilarDoc(model,comment,k,threshold):
         prediction = 0
 
     #find most similar subreddit
-    # mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
+    mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
 
-    return prediction
+    return prediction,mostSimSubreddit
 
 ##############################################################################
 #hate/NotHate code
@@ -165,8 +164,9 @@ def ishateful(subreddit):
     else:
         return 0
 
-#############################################################################
-#scoring code
+##############################################################################
+#testing code
+
 
 def test_score(model,path,k,threshold):
     '''Input: doc2vec model, path to test data, k val, threshold value
@@ -182,13 +182,13 @@ def test_score(model,path,k,threshold):
     # print "scoring..."
     for row in xrange(len(labels)):
         tweet = tweets[row]
-        prediction = mostSimilarDoc(model,tweet,k,threshold)
+        prediction, predictedSub = mostSimilarDoc(model,tweet,k,threshold)
         predict[row] = prediction
 
     TP = sum(predict+labels == 2)
-    TN = sum(predict+labels == 0)
+    TN = sum(predict+labels== 0)
     FP = sum(predict-labels == 1)
-    FN = sum(predict-labels == -1)
+    FN = sum(predict-labels== -1)
 
     accu = (TP+TN)/float(len(labels))
     recall = TP/float(TP+FN)
@@ -209,54 +209,36 @@ def test_score(model,path,k,threshold):
     print "FP: {}".format(FP)
 
     #output data to be saved in a pd dataframe
-    return [k,threshold,accu,recall,precision,TP,TN,FN,FP]
+    return df, predict
 
-##############################################################################
-#Main
 
 if __name__ == '__main__':
-    '''This script runs gridsearch on a doc2vec model to determine the
-       optimal k and threshold values on the cross val set'''
+    '''outputs the doc2vec model predictions to a csv file to compare
+       to the xgb model predictions'''
 
     print "starting..."
 
     #dataset paths
-    trainpath = '../../data/labeledRedditComments.p'
-    trainpath2 = '../../data/labeledRedditComments2.p'
-    cvpath = '../../data/twitter_cross_val.csv'
-    testpath = '../../data/twitter_test.csv'
-    sqlpath = '../../data/RedditMay2015Comments.sqlite'
+    # trainpath = '../../data/labeledRedditComments.p'
+    # trainpath2 = '../../data/labeledRedditComments2.p'
+    cvpath = '../../data/twitter_cross_val_xgboost_results.csv'
+    # testpath = '../../data/twitter_test.csv'
+    # sqlpath = '../../data/RedditMay2015Comments.sqlite'
 
     #model paths
-    # modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
+    modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
     # modelPath = '../../doc2vec_models/basemodel3/basemodel3.doc2vec'
     # modelPath = '../../doc2vec_models/basemodel4/basemodel4.doc2vec'
-    modelPath = '../../doc2vec_models/basemodel5/basemodel5.doc2vec'
     # modelPath = '../../doc2vec_models/modellower/modellower.doc2vec'
     # modelPath = '../../doc2vec_models/model_split/model_split.doc2vec'
 
     print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
-    tstart = time.time()
-    print "gridsearch..."
-    results = []
-    count = 0
-    for k in xrange(1,15):
-        for threshold in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]:
-            print "count: {}".format(count)
-            results.append(test_score(model,cvpath,k,threshold))
-            count+=1
-            print ""
 
-    labels = ['k','threshold','accuracy','recall','precision','TP','TN','FN','FP']
-    df = pd.DataFrame(data=results,columns=labels)
+    print "scoring..."
+    df, predict = test_score(model,cvpath,11,0.63)
 
-    tstop = time.time()
-
-    dt = tstop-tstart
-
-    print "total time: {}".format(dt)
-    print "time per gridpoint: {}".format(dt/float(count))
-
-    df.to_csv('../../data/gridsearch_modelbase5_on_cross_val.csv')
+    print "saving to csv..."
+    df['doc2vec_predict'] = predict
+    df.to_csv('../../data/twitter_cross_val_xgboost_doc2vec_results.csv')

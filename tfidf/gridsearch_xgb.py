@@ -46,6 +46,10 @@ def OHStokenize(text):
 # tokenization code
 
 def seperatePunct(incomingString):
+    '''
+    Input:str,
+    Output: str with all puncuations seperated by spaces
+    '''
     outstr = ''
     characters = set(['!','@','#','$',"%","^","&","*",":","\\",
                   "(",")","+","=","?","\'","\"",";","/",
@@ -60,7 +64,11 @@ def seperatePunct(incomingString):
     return outstr
 
 def hasNumbers(inputString):
-     return any(char.isdigit() for char in inputString)
+    '''
+    Input: str
+    Output: returns a 1 if the string contains a number
+    '''
+    return any(char.isdigit() for char in inputString)
 
 def text_cleaner(wordList):
     '''
@@ -125,6 +133,10 @@ def mytokenize(comment):
 #main
 
 def search(xg_train,xg_cv,paramlist,i):
+    '''Input: traing set, eval set, xgboost parameter list, index
+       Output: returns a list with the parameters and the results of
+               evaluating the auc of the model on the eval set
+    '''
 
     print "start i: ", i
     print ""
@@ -153,6 +165,9 @@ def search(xg_train,xg_cv,paramlist,i):
                       evals_result=results,
                       verbose_eval=False)
 
+    modelfilename = 'xgbfinal3_{}.model'.format(i)
+    model.save_model(modelfilename)
+
     print "finish i: ", i
     print ""
 
@@ -161,61 +176,80 @@ def search(xg_train,xg_cv,paramlist,i):
 
 
 if __name__ == '__main__':
+    '''This script runs gridsearch to determine the optimal parameters
+       for xgboost on the reddit corpus'''
 
     print "entering main..."
 
-    path = '../../data/labeledRedditComments2.p'
-    cvpath = '../../data/twitter_cross_val.csv'
+    # path = '../../data/labeledRedditComments2.p'
+    # cvpath = '../../data/twitter_cross_val.csv'
+    #
+    # load_tstart = time.time()
+    # print 'loading data...'
+    # df = load_data(path)
+    # dfcv = pd.read_csv(cvpath)
+    # load_tstop = time.time()
+    #
+    # #take a subset of the data for testing this code
+    # randNums = np.random.randint(low=0,high=len(df.index),size=(100,1))
+    # rowList = [int(row) for row in randNums]
+    # dfsmall = df.ix[rowList,:]
+    #
+    # nf = dfsmall
+    #
+    # #create training set and labels
+    # X = nf.body
+    # y = nf.label
+    #
+    # Xcv = dfcv['tweet_text'].values
+    # ycv = dfcv['label'].values
+    #
+    # vect_tstart = time.time()
+    # print "vectorizing..."
+    # vect = TfidfVectorizer(stop_words='english', decode_error='ignore',
+    #                        tokenizer=OHStokenize)
+    #
+    # # fit & transform comments matrix
+    # tfidf_X = vect.fit_transform(X)
+    # tfidf_Xcv = vect.transform(Xcv)
+    # vect_tstop = time.time()
+    #
+    #
+    #
+    # print "converting data..."
+    # #convert to dense so that DMatrix doesn't drop cols with all zeros
+    # tfidf_Xcvd = tfidf_Xcv.todense()
+    #
+    # #data conversion to DMatrix
+    # xg_train = xgb.DMatrix(tfidf_X, label=y)
+    # xg_cv = xgb.DMatrix(tfidf_Xcvd, label=ycv)
 
-    load_tstart = time.time()
-    print 'loading data...'
-    df = load_data(path)
+    print "loading vectorizer..."
+    vect = pickle.load(open('vect.p', 'rb'))
+
+    cvpath = 'twitter_cross_val.csv'
     dfcv = pd.read_csv(cvpath)
-    load_tstop = time.time()
-
-    #take a subset of the data for testing this code
-    randNums = np.random.randint(low=0,high=len(df.index),size=(100,1))
-    rowList = [int(row) for row in randNums]
-    dfsmall = df.ix[rowList,:]
-
-    nf = dfsmall
-
-    #create training set and labels
-    X = nf.body
-    y = nf.label
-
     Xcv = dfcv['tweet_text'].values
     ycv = dfcv['label'].values
 
-    vect_tstart = time.time()
-    print "vectorizing..."
-    vect = TfidfVectorizer(stop_words='english', decode_error='ignore',
-                           tokenizer=OHStokenize)
-
-    # fit & transform comments matrix
-    tfidf_X = vect.fit_transform(X)
+    print "transforming cross val data..."
     tfidf_Xcv = vect.transform(Xcv)
-    vect_tstop = time.time()
-
-    print "converting data..."
-    #convert to dense so that DMatrix doesn't drop cols with all zeros
     tfidf_Xcvd = tfidf_Xcv.todense()
 
-    #data conversion to DMatrix
-    xg_train = xgb.DMatrix(tfidf_X, label=y)
     xg_cv = xgb.DMatrix(tfidf_Xcvd, label=ycv)
 
-
+    print "loading training data..."
+    xg_train = xgb.DMatrix('xg_train2.buffer')
 
     print 'gridsearching...'
     grid_tstart = time.time()
     results = []
     i = 0
-    for eta in [0.03,0.06,0.09,0.3,0.6,0.9]:
-        for max_depth in [3,4,5,6]:
+    for eta in [0.3,0.6,0.9]:
+        for max_depth in [3,4,5]:
             for num_rounds in [100,300,600,900]:
                 params = [num_rounds,max_depth,eta]
-                results.append(search(xg_train,xg_cv,paramlist,i))
+                results.append(search(xg_train,xg_cv,params,i))
                 i+=1
 
     grid_tstop = time.time()
@@ -224,7 +258,7 @@ if __name__ == '__main__':
     #save data to dataframe
     labels = ['num_rounds','max_depth','eta','eval_results']
     df = pd.DataFrame(data=results,columns=labels)
-    df.to_csv('gridsearch_xgb.csv')
+    df.to_csv('gridsearch3_xgb.csv')
 
-    print "vect: {}".format(vect_tstop - vect_tstart)
+    # print "vect: {}".format(vect_tstop - vect_tstart)
     print "gridsearch: {}".format(grid_tstop - grid_tstart)

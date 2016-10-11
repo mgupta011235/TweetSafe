@@ -18,22 +18,24 @@ scp -i ~/Downloads/gupta1.pem Untitled1.ipynb ec2-user@52.205.255.138:
 
 6. in terminal type "pip install pandas --upgrade" upgrade to newest version of pandas so you can open pandas pickle files
 
-7. upload your script and have fun!!!!!
+7. pip install --upgrade xgboost
+
+8. upload your script and have fun!!!!!
 
 
-ssh -i ~/Downloads/gupta1.pem ubuntu@54.82.223.201
+ssh -i ~/Downloads/gupta1.pem ubuntu@174.129.77.21
 
 #put file on aws instance, this is a terminal on my comp
-scp -i ~/Downloads/gupta1.pem gridsearch_doc2vec.py ubuntu@54.158.253.209:
+scp -i ~/Downloads/gupta1.pem train_xgboost.py ubuntu@54.165.98.19:
 
 #get file from aws instance, this is a terminal on my comp
-scp -i ~/Downloads/gupta1.pem ubuntu@54.175.28.165:/home/ubuntu/train_doc2vec_aws.py ./
+scp -i ~/Downloads/gupta1.pem ubuntu@54.165.98.19:/home/ubuntu/train_doc2vec_aws.py ./
 
 
-scp -i ~/Downloads/gupta1.pem ubuntu@54.158.253.209:/home/ubuntu/models/basemodel3* ./
+scp -i ~/Downloads/gupta1.pem ubuntu@174.129.77.21:/home/ubuntu/*.csv ./
 
-scp -i ~/Downloads/gupta1.pem ubuntu@54.158.253.209:/home/ubuntu/gridsearch_modelbase3_on_cross_val.csv ./
+scp -i ~/Downloads/gupta1.pem ubuntu@54.165.98.19:/home/ubuntu/xgbfinal2.model ./
 
-scp -i ~/Downloads/gupta1.pem train_xgboost.py ubuntu@54.82.223.201:
+scp -i ~/Downloads/gupta1.pem analyze_xgb_model.py ubuntu@174.129.77.21:
 
 

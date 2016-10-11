@@ -13,6 +13,10 @@ import time
 #Tokenizer Functions
 
 def seperatePunct(incomingString):
+    '''
+    Input:str,
+    Output: str with all puncuations seperated by spaces
+    '''
     outstr = ''
     characters = set(['!','@','#','$',"%","^","&","*",":","\\",
                   "(",")","+","=","?","\'","\"",";","/",
@@ -27,7 +31,11 @@ def seperatePunct(incomingString):
     return outstr
 
 def hasNumbers(inputString):
-     return any(char.isdigit() for char in inputString)
+    '''
+    Input: str
+    Output: returns a 1 if the string contains a number
+    '''
+    return any(char.isdigit() for char in inputString)
 
 def text_cleaner(wordList):
     '''
@@ -138,6 +146,8 @@ def sql_gen(c):
 #Model Functions
 
 def build_model(gen_obj):
+    '''Input: a generator source to generate training data from
+       Output: a trained doc2vec model'''
 
     cores = multiprocessing.cpu_count()
     # print "FAST_VERSION: {}".format(gensim.models.doc2vec.FAST_VERSION)
@@ -188,6 +198,7 @@ def build_model(gen_obj):
 #Main
 
 if __name__ == '__main__':
+    '''This script trains a doc2vec model'''
     print "starting..."
 
     path = 'labeledRedditComments2.p'

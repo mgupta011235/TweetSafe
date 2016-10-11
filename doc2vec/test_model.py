@@ -11,6 +11,10 @@ from nltk.tokenize import PunktSentenceTokenizer
 # tokenization code
 
 def seperatePunct(incomingString):
+    '''
+    Input:str,
+    Output: str with all puncuations seperated by spaces
+    '''
     outstr = ''
     characters = set(['!','@','#','$',"%","^","&","*",":","\\",
                   "(",")","+","=","?","\'","\"",";","/",
@@ -25,7 +29,11 @@ def seperatePunct(incomingString):
     return outstr
 
 def hasNumbers(inputString):
-     return any(char.isdigit() for char in inputString)
+    '''
+    Input: str
+    Output: returns a 1 if the string contains a number
+    '''
+    return any(char.isdigit() for char in inputString)
 
 def text_cleaner(wordList):
     '''
@@ -160,6 +168,9 @@ def ishateful(subreddit):
 #testing code
 
 def train_score(model,path,numsamps,k,threshold):
+    '''Input: doc2vec model, path to train data, number of training samples to
+              test on, k val, threshold value
+       Output: the following list [k,threshold,accu,recall,precision,TP,TN,FN,FP]'''
 
     print "loading data..."
     df = pickle.load(open(path, 'rb'))
@@ -209,6 +220,8 @@ def train_score(model,path,numsamps,k,threshold):
 
 
 def test_score(model,path,k,threshold):
+    '''Input: doc2vec model, path to test data, k val, threshold value
+       Output: the following list [k,threshold,accu,recall,precision,TP,TN,FN,FP]'''
 
     # print "loading data..."
     df = pd.read_csv(path)
@@ -251,6 +264,7 @@ def test_score(model,path,k,threshold):
 
 
 if __name__ == '__main__':
+    '''This script tests a doc2vec model on the training,cross val and test set'''
 
     print "starting..."
 

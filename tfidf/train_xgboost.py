@@ -45,6 +45,10 @@ def OHStokenize(text):
 # tokenization code
 
 def seperatePunct(incomingString):
+    '''
+    Input:str,
+    Output: str with all puncuations seperated by spaces
+    '''
     outstr = ''
     characters = set(['!','@','#','$',"%","^","&","*",":","\\",
                   "(",")","+","=","?","\'","\"",";","/",
@@ -59,7 +63,11 @@ def seperatePunct(incomingString):
     return outstr
 
 def hasNumbers(inputString):
-     return any(char.isdigit() for char in inputString)
+    '''
+    Input: str
+    Output: returns a 1 if the string contains a number
+    '''
+    return any(char.isdigit() for char in inputString)
 
 def text_cleaner(wordList):
     '''
@@ -127,8 +135,8 @@ def mytokenize(comment):
 def main():
     print "entering main..."
 
-    path = '../../data/labeledRedditComments2.p'
-    cvpath = '../../data/twitter_cross_val.csv'
+    path = 'labeledRedditComments2.p'
+    cvpath = 'twitter_cross_val.csv'
 
     load_tstart = time.time()
     print 'loading data...'
@@ -137,11 +145,11 @@ def main():
     load_tstop = time.time()
 
     #take a subset of the data for testing this code
-    randNums = np.random.randint(low=0,high=len(df.index),size=(200,1))
-    rowList = [int(row) for row in randNums]
-    dfsmall = df.ix[rowList,:]
+    # randNums = np.random.randint(low=0,high=len(df.index),size=(200,1))
+    # rowList = [int(row) for row in randNums]
+    # dfsmall = df.ix[rowList,:]
 
-    nf = dfsmall
+    nf = df
 
     #create training set and labels
     X = nf.body
@@ -150,39 +158,59 @@ def main():
     Xcv = dfcv['tweet_text'].values
     ycv = dfcv['label'].values
 
-    vect_tstart = time.time()
-    print "vectorizing..."
+    vect_tstart = time.time()dfscore.plot.barh?
+    print "creating vectorizer..."
     vect = TfidfVectorizer(stop_words='english', decode_error='ignore',
-                           tokenizer=mytokenize)
+                           tokenizer=OHStokenize)
 
-
+    print "vectorizing..."
     # fit & transform comments matrix
     tfidf_X = vect.fit_transform(X)
+
+    print "pickling vectorizer..."
+    pickle.dump(vect, open('vect.p', 'wb'))
+
     tfidf_Xcv = vect.transform(Xcv)
     vect_tstop = time.time()
 
-    print "tfidf_X.shape {}".format(tfidf_X.shape)
-    print "tfidf_Xcv.shape {}".format(tfidf_Xcv.shape)
+    print "converting data..."
+    #convert to dense so that DMatrix doesn't drop cols with all zeros
+    tfidf_Xcvd = tfidf_Xcv.todense()
 
-
-    # develop data to train model
-    # .todense() b/c otherwise DMatrix conversion will drop cols b/c in a
-    # sparse matrix, a col with all 0's doesn't exist
+    #data conversion to DMatrix
     xg_train = xgb.DMatrix(tfidf_X, label=y)
-    xg_cv = xgb.DMatrix(tfidf_Xcv.todense(), label=ycv)
+    xg_cv = xgb.DMatrix(tfidf_Xcvd, label=ycv)
+
+    # print "loading vectorizer..."
+    # vect = pickle.load(open('vect.p', 'rb'))
+    #
+    # cvpath = 'twitter_cross_val.csv'
+    # dfcv = pd.read_csv(cvpath)
+    # Xcv = dfcv['tweet_text'].values
+    # ycv = dfcv['label'].values
+    #
+    # print "transforming cross val data..."
+    # tfidf_Xcv = vect.transform(Xcv)
+    # tfidf_Xcvd = tfidf_Xcv.todense()
+    #
+    # xg_cv = xgb.DMatrix(tfidf_Xcvd, label=ycv)
+
+    # print "loading training data..."
+    # xg_train = xgb.DMatrix('xg_train2.buffer')
+    # xg_cv = xgb.DMatrix('xg_cv2.buffer')
 
     train_tstart = time.time()
     print 'training...'
 
     #parameters
-    param = {'max_depth':2,
-             'eta':0.5,
+    param = {'max_depth':4,
+             'eta':0.3,
              'silent':1,
              'objective':'binary:logistic',
              'eval_metric':'auc'
              }
     #number of boosted rounds
-    num_round = 1
+    num_round = 163
 
     # what to apply the eval metric to
     # what the eval metric on these as you train to obj
@@ -197,19 +225,30 @@ def main():
                       num_round,
                       watchlist,
                       evals_result=results, #store eval results in results dic
-                      verbose_eval=False)   #dont print output to screen
+                      verbose_eval=True)   #dont print output to screen
     train_tstop = time.time()
 
     print "saving model..."
-    model.save_model('../../xgb_models/xgb.model')
+    model.save_model('xgbfinal4.model')
 
-    print "load data: {}".format(load_tstop - load_tstart)
-    print "tfidf: {}".format(vect_tstop - vect_tstart)
-    print "train: {}".format(train_tstop - train_tstart)
+    # # dump model
+    # model.dump_model('dump2.raw.txt')
+    #
+    # # dump model with feature map
+    # model.dump_model('dump2.nice.txt')
+
+    # save dmatrix into binary buffer
+    xg_train.save_binary('xg_train4.buffer')
+    # xg_cv.save_binary('xg_cv2.buffer')
+
+    # print "load data: {}".format(load_tstop - load_tstart)
+    # print "tfidf: {}".format(vect_tstop - vect_tstart)
+    # print "train: {}".format(train_tstop - train_tstart)
 
 
     # To load saved model:
     # model = xgb.Booster(model_file='../../xgb_models/xgb.model')
 
 if __name__ == '__main__':
+    '''This script trains a TFIDF model using xgboost on the reddit corpus'''
     main()

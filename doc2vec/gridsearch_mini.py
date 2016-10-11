@@ -12,6 +12,10 @@ import time
 # tokenization code
 
 def seperatePunct(incomingString):
+    '''
+    Input:str,
+    Output: str with all puncuations seperated by spaces
+    '''
     outstr = ''
     characters = set(['!','@','#','$',"%","^","&","*",":","\\",
                   "(",")","+","=","?","\'","\"",";","/",
@@ -26,7 +30,11 @@ def seperatePunct(incomingString):
     return outstr
 
 def hasNumbers(inputString):
-     return any(char.isdigit() for char in inputString)
+    '''
+    Input: str
+    Output: returns a 1 if the string contains a number
+    '''
+    return any(char.isdigit() for char in inputString)
 
 def text_cleaner(wordList):
     '''
@@ -205,6 +213,9 @@ def test_score(model,path,k,threshold):
 #Main
 
 if __name__ == '__main__':
+    '''This script runs a gridsearch over a small interval to determine
+       the optimal threshold value
+       '''
 
     print "starting..."
 
