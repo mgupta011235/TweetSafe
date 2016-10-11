@@ -51,18 +51,19 @@ def main():
     print "loading model..."
     model = xgb.Booster(model_file=modelpath)
 
-    print "getting feature importances..."
-    df = pd.DataFrame({'f1_score':model.get_fscore().values()},
-                      index=model.get_fscore().keys())
-
-    df.to_csv('f1_score_dataframe.csv')
+    # print "getting feature importances..."
+    # df = pd.DataFrame({'f1_score':model.get_fscore().values()},
+    #                   index=model.get_fscore().keys())
+    #
+    # df.to_csv('f1_score_dataframe.csv')
 
 
     print "loading vectorizer..."
     vect = pickle.load(open('vect.p', 'rb'))
 
-    cvpath = 'twitter_cross_val.csv'
-    dfcv = pd.read_csv(cvpath)
+    # cvpath = 'twitter_cross_val.csv'
+    testpath = 'twitter_test.csv'
+    dfcv = pd.read_csv(testpath)
     Xcv = dfcv['tweet_text'].values
     ycv = dfcv['label'].values
 
@@ -76,7 +77,7 @@ def main():
     proba = model.predict(xg_cv)
 
     dfcv['xgboost_predict'] = proba
-    dfcv.to_csv('twitter_cross_val_xgboost_results.csv')
+    dfcv.to_csv('twitter_test_xgboost_results.csv')
 
 if __name__ == '__main__':
     '''This script collects feature importances and predicted probablities'''

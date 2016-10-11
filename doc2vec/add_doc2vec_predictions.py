@@ -221,8 +221,9 @@ if __name__ == '__main__':
     #dataset paths
     # trainpath = '../../data/labeledRedditComments.p'
     # trainpath2 = '../../data/labeledRedditComments2.p'
-    cvpath = '../../data/twitter_cross_val_xgboost_results.csv'
+    # cvpath = '../../data/twitter_cross_val_xgboost_results.csv'
     # testpath = '../../data/twitter_test.csv'
+    testpath = '../../data/twitter_test_xgboost_results.csv'
     # sqlpath = '../../data/RedditMay2015Comments.sqlite'
 
     #model paths
@@ -237,8 +238,8 @@ if __name__ == '__main__':
 
 
     print "scoring..."
-    df, predict = test_score(model,cvpath,11,0.63)
+    df, predict = test_score(model,testpath,11,0.63)
 
     print "saving to csv..."
     df['doc2vec_predict'] = predict
-    df.to_csv('../../data/twitter_cross_val_xgboost_doc2vec_results.csv')
+    df.to_csv('../../data/twitter_test_xgboost_doc2vec_results.csv')

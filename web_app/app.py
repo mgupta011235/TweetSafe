@@ -1,12 +1,19 @@
+from flask import Flask
+
+from flask import (request,
+                   redirect,
+                   url_for,
+                   session,
+                   render_template,
+                   jsonify)
+
+import cPickle as pickle
 import gensim
 import pandas as pd
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-import cPickle as pickle
 from scipy.spatial.distance import cosine
 from nltk.tokenize import PunktSentenceTokenizer
-import time
 
 ###########################################################################
 # tokenization code
@@ -95,6 +102,7 @@ def mytokenizer(comment):
 
     return text_cleaner(wordList)
 
+
 #############################################################################
 #similarity code
 
@@ -125,9 +133,12 @@ def mostSimilarDoc(model,comment,k,threshold):
     mostSimVecInd = np.argsort(simVals)[-k:]
     hatecount = 0
 
+    simSubredditList = []
+
     #count how many hates there are
     for index in mostSimVecInd:
         hatecount += ishateful(docvecs.index_to_doctag(index))
+        simSubredditList.append(docvecs.index_to_doctag(index))
 
     #majority vote to determine hateful/nothateful
     if hatecount>=threshold*len(mostSimVecInd):
@@ -136,9 +147,9 @@ def mostSimilarDoc(model,comment,k,threshold):
         prediction = 0
 
     #find most similar subreddit
-    # mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
+    mostSimSubreddit = docvecs.index_to_doctag(mostSimVecInd[0])
 
-    return prediction
+    return prediction,simSubredditList
 
 ##############################################################################
 #hate/NotHate code
@@ -165,96 +176,48 @@ def ishateful(subreddit):
     else:
         return 0
 
-#############################################################################
-#scoring code
-
-def test_score(model,path,k,threshold):
-
-    # print "loading data..."
-    df = pd.read_csv(path)
-    tweets = df['tweet_text'].values
-    labels = df['label'].values
-
-    predict = np.zeros((len(labels),))
-
-    # print "scoring..."
-    for row in xrange(len(labels)):
-        tweet = tweets[row]
-        prediction = mostSimilarDoc(model,tweet,k,threshold)
-        predict[row] = prediction
-
-    TP = sum(predict+labels == 2)
-    TN = sum(predict+labels == 0)
-    FP = sum(predict-labels == 1)
-    FN = sum(predict-labels == -1)
-
-    accu = (TP+TN)/float(len(labels))
-    recall = TP/float(TP+FN)
-    precision = TP/float(TP+FP)
-
-    print ""
-    print "k: {}".format(k)
-    print "threshold: {}".format(threshold)
-    print "accuracy: {}".format(accu)
-    print "recall: {}".format(recall)
-    print "precision: {}".format(precision)
-
-    print ""
-    print "TP: {}".format(TP)
-    print "TN: {}".format(TN)
-    print ""
-    print "FN: {}".format(FN)
-    print "FP: {}".format(FP)
-
-    #output data to be saved in a pd dataframe
-    return [k,threshold,accu,recall,precision,TP,TN,FN,FP]
-
 ##############################################################################
-#Main
+#Flask code
 
-if __name__ == '__main__':
-    '''This script runs a gridsearch over a small interval to determine
-       the optimal threshold value
-       '''
 
-    print "starting..."
 
-    #dataset paths
-    # trainpath = '../../data/labeledRedditComments.p'
-    # trainpath2 = '../../data/labeledRedditComments2.p'
-    # cvpath = '../../data/twitter_cross_val.csv'
-    testpath = '../../data/twitter_test.csv'
-    # sqlpath = '../../data/RedditMay2015Comments.sqlite'
+# begin app
 
-    #model paths
+app = Flask(__name__)
+
+# home page
+@app.route('/')
+def welcome():
+    return render_template('index.html')
+
+@app.route('/submit', methods=['POST'] )
+def submission_page():
+    tweet = str(request.form['newtext'])
+
+    #load model
     modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
-    # modelPath = '../../doc2vec_models/basemodel3/basemodel3.doc2vec'
-    # modelPath = '../../doc2vec_models/basemodel4/basemodel4.doc2vec'
-    # modelPath = '../../doc2vec_models/modellower/modellower.doc2vec'
-    # modelPath = '../../doc2vec_models/model_split/model_split.doc2vec'
-
-    print "loading model..."
     model = gensim.models.Doc2Vec.load(modelPath)
 
-    tstart = time.time()
-    print "gridsearch..."
-    results = []
-    count = 0
-    for k in xrange(11,12):
-        for threshold in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]:
-            print "count: {}".format(count)
-            results.append(test_score(model,testpath,k,threshold))
-            count+=1
-            print ""
+    #set tuning parameters
+    k = 11
+    threshold = 0.6
 
-    labels = ['k','threshold','accuracy','recall','precision','TP','TN','FN','FP']
-    df = pd.DataFrame(data=results,columns=labels)
+    #find most similar subreddit
+    prediction, simSubredditList = mostSimilarDoc(model,tweet,k,threshold)
 
-    tstop = time.time()
+    output = []
 
-    dt = tstop-tstart
+    for i in xrange(3):
+        output.append(simSubredditList[i])
 
-    print "total time: {}".format(dt)
-    print "time per gridpoint: {}".format(dt/float(count))
+    page = 'The path is : {0} '
+    return output[0]
 
-    df.to_csv('../../data/gridsearch_modelbase2mini_on_test.csv')
+    page = 'The path is : {0} '
+    # sorted_similar_tweets = get_similar(tweet)
+    # print sorted_similar_tweets.shape
+    # print len(docs_vectorized)
+    # return tweet_list[sorted_similar_tweets[0][0]]
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)
