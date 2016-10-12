@@ -190,6 +190,45 @@ app = Flask(__name__)
 def welcome():
     return render_template('index.html')
 
+@app.route('/about')
+def about():
+    paragraph0 = "Why TweetSafe?"
+
+    paragraph1 = ''' Online communities such as twitter have grown to
+    become important centers where everyone can exchange information and ideas.
+    All too often however, people use these sites as a platform to attack and
+    dehumanize others. Because of the huge information flow on these sites, it's
+    impossible for human administrators to effectively police these abusive users.
+    To solve this problem I developed TweetSafe. TweetSafe is a neural network
+    that determines if a tweet is offensive or not. TweetSafe has the ability to
+    sift through millions of tweets in mintues and flag abusive users. With this
+    tool Twitter will be able to effciently track and ban abusive users from its website. '''
+
+    paragraph2 = "How does it work?"
+
+    paragraph3 = '''TweetSafe is built on a neural network architecture called
+    Doc2Vec. Doc2Vec learns relationships between words and then maps each word to
+    a unique vector. These vector representations of words (called word embeddings)
+    are than used to find vector representations of document labels. In this case,
+    Doc2Vec was trained on 1.8 million reddit comments. The document labels
+    are subreddits and the words are comments from those subreddits. What TweetSafe
+    does is it takes a tweet, converts it into a vector and finds the 11 most similar
+    subreddits using cosine similarity. If 63% of those subreddits are offensive
+    subreddits, than the tweet is labeled as offensive'''
+
+    paragraph4 = "Beyond TweetSafe"
+
+    paragraph5 = '''While TweetSafe is tuned to detect abusive language
+    on Twitter, the method I outlined above can be applied to any online community.
+    I'm making this project avilible to anyone who is interested. I hope that by
+    doing so others will be inpsired by my work and continue to improve upon it.
+    If you do decide to use my work I encourage you to send me your results. I
+    would love to see what ideas you came up with!  '''
+
+    paragraphs = [paragraph0,"", paragraph1, "", paragraph2,"", paragraph3,"", paragraph4, "", paragraph5]
+
+    return render_template('index3.html',paragraphs=paragraphs)
+
 @app.route('/submit', methods=['POST'] )
 def submission_page():
     tweet = str(request.form['newtext'])
@@ -200,24 +239,19 @@ def submission_page():
 
     #set tuning parameters
     k = 11
-    threshold = 0.6
+    threshold = 0.63
 
     #find most similar subreddit
     prediction, simSubredditList = mostSimilarDoc(model,tweet,k,threshold)
 
-    output = []
+    #number all the subreddits
+    for i,subreddit in enumerate(simSubredditList):
+        simSubredditList[i] = "/r/{}".format(subreddit)
 
-    for i in xrange(3):
-        output.append(simSubredditList[i])
+    tweetStr = "Top 11 most similar subreddits to {}".format(tweet)
 
-    page = 'The path is : {0} '
-    return output[0]
+    return render_template('index2.html', tweet=tweetStr,subreddit=simSubredditList)
 
-    page = 'The path is : {0} '
-    # sorted_similar_tweets = get_similar(tweet)
-    # print sorted_similar_tweets.shape
-    # print len(docs_vectorized)
-    # return tweet_list[sorted_similar_tweets[0][0]]
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
