@@ -176,6 +176,25 @@ def ishateful(subreddit):
     else:
         return 0
 
+
+
+
+#############################################################################
+#
+def filterinput(tweet):
+    '''checks the input for bad chars and replaces them
+       with a space instead. '''
+    out = ""
+    for character in tweet:
+        try:
+            val = str(character)
+            out = out + val
+        except:
+            out = out + " "
+    return out
+
+
+
 ##############################################################################
 #Flask code
 
@@ -188,10 +207,13 @@ app = Flask(__name__)
 # home page
 @app.route('/')
 def welcome():
+    '''Home page'''
     return render_template('index.html')
 
 @app.route('/about')
 def about():
+    '''this page describes my project'''
+
     paragraph0 = "Why TweetSafe?"
 
     paragraph1 = ''' Online communities such as twitter have grown to
@@ -231,7 +253,15 @@ def about():
 
 @app.route('/submit', methods=['POST'] )
 def submission_page():
-    tweet = str(request.form['newtext'])
+    '''outputs the 11 most similar subreddits and color codes the text.
+       red for offensive, green for not offensive'''
+    # try:
+    #     tweet = str(request.form['newtext'])
+    # except UnicodeEncodeError:
+    #     tweet = "Oops! That tweet contained a UnicodeEncodeError. Please try another tweet."
+
+    #filter the input for bad chars
+    tweet = filterinput(request.form['newtext'])
 
     #load model
     modelPath = '../../doc2vec_models/basemodel2/basemodel2.doc2vec'
@@ -244,13 +274,26 @@ def submission_page():
     #find most similar subreddit
     prediction, simSubredditList = mostSimilarDoc(model,tweet,k,threshold)
 
-    #number all the subreddits
+    #a list of the classes of the subreddit, hate or not hate.
+    #used to tell html code what color output link should be.
+    classList = []
+
+    if prediction:
+        classList.append('hate')
+    else:
+        classList.append('nothate')
+
+    #attach a class to all the subreddits
     for i,subreddit in enumerate(simSubredditList):
         simSubredditList[i] = "/r/{}".format(subreddit)
 
-    tweetStr = "Top 11 most similar subreddits to {}".format(tweet)
+        if ishateful(subreddit):
+            classList.append('hate')
+        else:
+            classList.append('nothate')
 
-    return render_template('index2.html', tweet=tweetStr,subreddit=simSubredditList)
+
+    return render_template('index2.html', tweet=tweet,subreddit=simSubredditList, classList=classList)
 
 
 if __name__ == '__main__':

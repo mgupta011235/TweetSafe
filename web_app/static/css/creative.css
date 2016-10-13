@@ -4,6 +4,20 @@
  * For details, see http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+.hate {
+  color: red;
+  -webkit-transition: all .35s;
+  -moz-transition: all .35s;
+  transition: all .35s;
+}
+
+.nothate{
+  color: green;
+  -webkit-transition: all .35s;
+  -moz-transition: all .35s;
+  transition: all .35s;
+}
+
 html,
 body {
     width: 100%;
@@ -505,9 +519,9 @@ body {
   color: #fff;
   font:12px/18px 'HelveticaNeue', Helvetica, Arial, sans-serif;
 }
-a,a:visited {
+/*a,a:visited {
   color:#fff
-}
+}*/
 
 .searchform {
   background:#f4f4f4;
