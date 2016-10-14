@@ -8,10 +8,9 @@ TweetSafe is a Doc2Vec model used to classify tweets as either offensive or not.
 
 - [Motivation](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Data](https://github.com/mgupta011235/TweetSafe#data)
-- [Doc2Vec](https://github.com/mgupta011235/TweetSafe#doc2vec)
-- [TF-IDF](https://github.com/mgupta011235/TweetSafe#motivation)
+- [Doc2Vec Model](https://github.com/mgupta011235/TweetSafe#doc2vec)
+- [TF-IDF Model](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Model Comparison](https://github.com/mgupta011235/TweetSafe#motivation)
-- [Word Embeddings](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Website](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Assumptions](https://github.com/mgupta011235/TweetSafe#motivation)
 - [References](https://github.com/mgupta011235/TweetSafe#motivation)
@@ -30,59 +29,133 @@ The motivation for this project was based on two potential business applications
 
 ## Data
 
-The data source I used for this project was comments from [reddit]( https://www.reddit.com/). A user had scraped all the publicly available comments and published them.
-[Original link](https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/ )
- Kaggle published the May 2015 reddit data in a Sqlite database available for download.  [ Kaggle link to Reddit comments ]( https://www.kaggle.com/c/reddit-comments-may-2015 ) Another reddit user had uploaded the data to Google's BigQuery, making it easy to obtain a subset of the full reddit comments data. [BigQuery Link to Reddit Comments](https://bigquery.cloud.google.com/dataset/fh-bigquery:reddit_comments)
+There were two datasets used in this project. The training set came from selected subreddits from the May 2015 reddit data dump. This dataset is avaible from [Kaggle]( https://www.kaggle.com/c/reddit-comments-may-2015 ) as a Sqlite database. The subreddits were selected so that the model would see offensive and not offensive comments on the same subject. For example, both /r/TheRedPill and /r/women were selected because they discuss woman's rights. However /r/TheRedPill is extremely misogynistic while /r/women is not.
+
+Table of final offensive and not offensive subreddits used:
+
+| Category | Subreddit Name | Number of comments|
+|:----: | :---: | :----: |
+| Offensive | /r/CoonTown | 51979 |
+| Offensive  | /r/WhiteRights | 1352 |
+| Offensive | /r/Trans_fags | 2362 |
+| Offensive | /r/SlutJustice | 309 |
+| Offensive | /r/TheRedPill | 59145 |
+| Offensive | /r/KotakuInAction | 128156 |
+| Offensive | /r/IslamUnveiled | 5769 |
+| Offensive | /r/GasTheKikes | 919 |
+| Offensive | /r/AntiPOZi | 4740 |
+| Offensive | /r/fatpeoplehate | 311183 |
+| Offensive | /r/TalesofFatHate | 5239 |
+| Not Offensive | /r/politics | 244927 |
+| Not Offensive | /r/worldnews | 490354 |
+| Not Offensive | /r/history | 25242 |
+| Not Offensive | /r/blackladies | 4396 |
+| Not Offensive| /r/lgbt | 8253 |
+| Not Offensive | /r/TransSpace | 472 |
+| Not Offensive | /r/women | 529 |
+| Not Offensive | /r/TwoXChromosomes | 105130 |
+| Not Offensive | /r/DebateReligion | 41015 |
+| Not Offensive | /r/religion | 2623 |
+| Not Offensive | /r/islam | 25443 |
+| Not Offensive | /r/Judaism | 9103 |
+| Not Offensive | /r/BodyAcceptance | 579 |
+| Not Offensive | /r/AskMen | 138839 |
+| Not Offensive | /r/AskWomen | 137889 |
+
+The second dataset was labeled Twitter hate speech dataset from [Crowdflower](https://www.crowdflower.com/data-for-everyone/). This dataset was split into a validation set and test set. The validation set was used to tune the hyper parameters for both models. The Twitter hate speech dataset was split so that there would be a even class balance in both the validation and test set.
+
+Table of comment distribution in validation and test set:
+
+| Category | Dataset | Number of comments|
+|:----: | :---: | :----: |
+| Offensive | Validation Set | 5034 |
+| Not Offensive | Validation Set | 4966 |
+| Offensive | Test Set| 2091 |
+| Not Offensive | Test Set| 2084 |
  
 
-## Technical Details
+## Doc2Vec Model
 
-I used TF-IDF with xgboost to classify comments as not hateful, or one of 4 dimensions of hate speech (race, religion, gender, body size). ___Comments were determined to be one of those 5 categories if they appeared in subreddits which were determined to be hateful or not hateful___
+### Tokenization
 
-Table of final hateful & not hateful subreddits used:
+Because doc2vec uses surrounding words to predict words, features such as ending, punctuations and the case of a word are extremely important. The tokenization procedure outlined below was designed so as to maximize the information taken from the comment while minimizing the noise.
 
-| Hate or Not Category | Subreddit Name | Number of comments|
+1. All numbers were converted to NUM_TAG
+2. All subreddit mentions were converted to SUBREDDIT_TAG
+3. All reddit user mentions were converted to USER_TAG
+4. ['!','@','#','$',"%","^","&","*",":","\\", "(",")","+","=","?","\'","\"",";","/", "{","}","[","]","<",">","~","`","|"] were converted to tokens
+5. Split on spaces
+
+
+
+### Training
+
+Table of doc2vec model parameters:
+
+| Parameter | Value |Notes|
 |:----: | :---: | :----: |
-| Hate: Race | /r/CoonTown | 51979 |
-| Hate: Race  | /r/WhiteRights | 1352 |
-| Hate: Gender | /r/Trans_fags | 2362 |
-| Hate: Gender | /r/SlutJustice | 309 |
-| Hate: Gender | /r/TheRedPill | 59145 |
-| Hate: Gender | /r/KotakuInAction | 128156 |
-| Hate: Religion | /r/IslamUnveiled | 5769 |
-| Hate: Religion | /r/GasTheKikes | 919 |
-| Hate: Religion | /r/AntiPOZi | 4740 |
-| Hate: Body Size | /r/fatpeoplehate | 311183 |
-| Hate: Body Size | /r/TalesofFatHate | 5239 |
-| Not Hate | /r/politics | 244927 |
-| Not Hate | /r/worldnews | 490354 |
-| Not Hate | /r/history | 25242 |
-| Not Hate | /r/blackladies | 4396 |
-| Not Hate | /r/lgbt | 8253 |
-| Not Hate | /r/TransSpace | 472 |
-| Not Hate | /r/women | 529 |
-| Not Hate | /r/TwoXChromosomes | 105130 |
-| Not Hate | /r/DebateReligion | 41015 |
-| Not Hate | /r/religion | 2623 |
-| Not Hate | /r/islam | 25443 |
-| Not Hate | /r/Judaism | 9103 |
-| Not Hate | /r/BodyAcceptance | 579 |
-| Not Hate | /r/fatlogic | 54525 |
+| dm | 0 | distributed bag of words model |
+| size | 300 | number of feature vecotors |
+| negative | 5 | number of noise words |
+| hs | 0| no hierarchical sampling |
+| min_count | 2 | ignore words that appear less than twice |
+| sample | 1e-5 | threshold for configuring which higher-frequency words are randomly downsampled |
+| window | 15 | maximum distance between the predicted word and context words used for prediction within a document |
+| workers | 4 | number of cores |
+| Epochs | 10 | number of training epochs |
+
+### Hyperparameter Tuning
+
+The doc2vec model determines whether a tweet is offensive or not by calculating the ratio of offensive to not offensive subreddits from a list of similar subreddits. Subreddit The number of similar subreddits found using cosine similarity (k) and the ratio of offensive to not offensive subreddits (threshold) were hyperparmeters that needed to be set. These hyperparmeters were found by maximizing the area under the curve (AUC) of the ROC curve produced by the model.
+
+Table of hyperparmeters:
+
+| Hyperparameter | Value |
+|:----: | :---: |
+| k | 11 |
+| threshold | 0.63 |
 
 
-I created a TF-IDF matrix from the May 2015 comments from the hateful and not-hateful subreddits previously identified. This was about 1.57 million comments, and resulted in a vocabulary of over 450,000 words. I lowercased letters, stripped words of punctuation, and applied a snowball stemmer during the tokenization process.
-
-I used the classification package in XGBoost to develop the final multi-class model. Initially, I ran a multinomial Naïve-Bayes model in SK-learn, which returned an average ROC AUC score of about 0.75.
-
-The XGBoost model improved significantly on multinomial Naïve Bayes, and after some parameter tuning, cross-validation  returned an average ROC AUC score of 0.86.
-The misclassification error for all the classes (the number of misclassified comments divided by the total number of comments) was 23%. This means that over 3/4 of the test comments were classified correctly.
 
 
-![jpg2](Images/DataPipeline.jpg)
 
-The models were developed on Amazon EC2 instances, as the processing power/memory required for both the vectorization of the comments into the tf-idf matrix and the training of the classification model were quite significant.
+![jpg](images/doc2vecROC.jpg)
+
+Using k = 11 and threshold = 0.63 produced a ROC curve with an area of 0.85. This curve was produced using the validation set.
 
 
+## TF-IDF Model
+
+### Tokenization
+
+Unlike doc2vec, tf-idf is only interested in the frequency at which a word appears in a corpus. Hence, stemming and punctuation removal is necessary. The snowball stemmer and word_tokenize functions from nltk were applied to tokenize the reddit comments before training.
+
+
+### Training
+
+Xgboost was used to train the tf-idf model. The resulting feature matrix from tf-idf was extremely large and required a memory optimized instance on Amazon Web Services in order to train xgboost on it.
+
+
+### Hyperparameter Tuning
+
+As with doc2vec, the hyperparameters of xgboost were chosen such that they maximized the AUC of the ROC curve produced by the model.
+
+Table of hyperparmeters parameters:
+
+| Parameter | Value |
+|:----: | :---: |
+| max_depth | 4 |
+| eta | 0.3 |
+| num_round | 163 |
+
+![jpg](images/TFIDFROC.jpg)
+
+
+The above ROC curve was calculated on the validation set. The AUC of this is 0.86.
+
+## Model Comparison
+
+## Website
 
 ## Assumptions
 
@@ -128,33 +201,7 @@ Another large assumption is that the hate speech encountered on reddit is simila
 
 ## References
 
-Benech, S, 2012. "Words As Weapons"
-http://www.worldpolicy.org/journal/spring2012/words-weapons
 
-Buckels, E.E. et al, 2014. "Trolls just want to have fun." Personality and Individual Differences, Vol 67, pp 97-102
-
-Burnap, P. and Williams, M. (2015) ‘Cyber Hate Speech on Twitter: An Application of Machine Classification and Statistical Modeling for Policy and Decision Making’, Policy & Internet. Vol. 7:2
-http://onlinelibrary.wiley.com/doi/10.1002/poi3.85/abstract
-
-Gagliardone, I., et.al. "Countering Online Hate Speech", UNESCO, 2015
-http://unesdoc.unesco.org/images/0023/002332/233231e.pdf
-
-Goodman E. and Cherubini, F. "Online Comment Moderation: emerging best practices" World Association of Newspapers (WAN-IFRA) 2013
-
-UMATI project and report
-http://www.ihub.co.ke/research/projects/23
-http://research.ihub.co.ke/uploads/2013/june/1372415606__936.pdf
-
-"The Harm in Hate Speech," Jeremy Waldron, 2012, Harvard University Press
-http://www.hup.harvard.edu/catalog.php?isbn=9780674065895
-
-## Resources
-
-[Southern Poverty Law Center](https://www.splcenter.org/issues/hate-and-extremism)
-
-[Dangerous Speech Project](http://dangerousspeech.org)
-
-[Anti-Defamation League](http://www.adl.org)
 
 
 ## Acknowledgements
