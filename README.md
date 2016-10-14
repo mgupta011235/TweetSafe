@@ -119,7 +119,7 @@ Table of hyperparmeters:
 
 
 
-![jpg](images/doc2vecROC.jpg)
+![jpg](notebook/doc2vecROC.jpg)
 
 Using k = 11 and threshold = 0.63 produced a ROC curve with an area of 0.85. This curve was produced using the validation set.
 
