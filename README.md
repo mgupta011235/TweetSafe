@@ -12,7 +12,7 @@ TweetSafe is a Doc2Vec model used to classify tweets as either offensive or not.
 - [TF-IDF Model](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Model Comparison](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Website](https://github.com/mgupta011235/TweetSafe#motivation)
-- [Acknowledgements](https://github.com/eyspahn/OnlineHateSpeech#acknowledgements)
+- [Acknowledgements](https://github.com/mgupta011235/TweetSafe#acknowledgements)
 
 
 ## Motivation
