@@ -1,0 +1,49 @@
+
+1. create a flask application that works.
+
+2. name the file application.py #putting flask on elasticbeanstalk
+
+3. in application.py,    
+application = Flask(__name__)
+app = application
+
+4. mkdir .ebextension in your app folder. put a python.config file there. follow #deploying scipy on elastic beanstalk 
+
+5. follow the steps in #creating a custom ami for elastic beanstalk.
+Upload your app as a bundle. #uploading a bundle to elastic beanstalk
+when modifying your custom ami, make sure copy files to the home directory. then "sudo mv * /" to move those files to root. 
+
+6. start up your new enviroment instance 
+
+
+
+
+
+
+
+#Links
+
+#uploading a bundle to elastic beanstalk
+http://docs.aws.amazon.com/gettingstarted/latest/deploy/deploying-with-elastic-beanstalk.html#create-bundle
+
+#increase command timeout period to fix "Update environment operation is complete, but with command timeouts error 
+http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/events.common.commandtimeout.html
+
+#deploying scipy on elastic beanstalk 
+http://djm.io/deploying-scipy-into-aws-elastic-beanstalk/
+note: use python27-devel for python 2.7
+
+#adding a .ebextensions file to your folder
+http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html
+
+#using yum to download python27-devel
+https://forums.aws.amazon.com/thread.jspa?threadID=233268
+
+#creating a custom ami for elastic beanstalk
+http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.customenv.html
+
+#getting nltk.downloader to work on elastic beanstalk
+http://stackoverflow.com/questions/36516697/not-able-to-install-nltk-data-on-django-app-on-elastic-beanstalk
+
+#putting flask on elasticbeanstalk
+http://blog.uptill3.com/2012/08/25/python-on-elastic-beanstalk.html

@@ -12,8 +12,6 @@ TweetSafe is a Doc2Vec model used to classify tweets as either offensive or not.
 - [TF-IDF Model](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Model Comparison](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Website](https://github.com/mgupta011235/TweetSafe#motivation)
-- [Assumptions](https://github.com/mgupta011235/TweetSafe#motivation)
-- [References](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Acknowledgements](https://github.com/eyspahn/OnlineHateSpeech#acknowledgements)
 
 
@@ -106,7 +104,7 @@ Table of doc2vec model parameters:
 
 ### Hyperparameter Tuning
 
-The doc2vec model determines whether a tweet is offensive or not by calculating the ratio of offensive to not offensive subreddits from a list of similar subreddits. Subreddit The number of similar subreddits found using cosine similarity (k) and the ratio of offensive to not offensive subreddits (threshold) were hyperparmeters that needed to be set. These hyperparmeters were found by maximizing the area under the curve (AUC) of the ROC curve produced by the model.
+The doc2vec model determines whether a tweet is offensive or not by calculating the ratio of offensive subreddits from a list of similar subreddits. The number of similar subreddits found using cosine similarity (k) and the ratio of offensive subreddits (threshold) were hyperparmeters that needed to be set. These hyperparmeters were found by maximizing the area under the curve (AUC) of the ROC curve produced by the model.
 
 Table of hyperparmeters:
 
@@ -153,61 +151,66 @@ Table of hyperparmeters parameters:
 
 The above ROC curve was calculated on the validation set. The AUC of this is 0.86.
 
+
+![jpg](images/Feature_Importance.jpg)
+
+This graph displays the top 20 most important features that xgboost split on.
+
+Since the model is interested in detecting hateful language it isn't surprising that "fat" is the most important feature that xgboost is splitting on. What is surprising is that "." and "," were the next two important features. This implies that the model is looking at the grammatical structure of the tweet in addition to the words in the tweet. This approach makes intuitive sense because there is a strong correlation between weak grammatical structure and offensive comments.
+
+Another interesting top feature is "gg". This stands for "good game" and is said at the end of online gaming competitions such as DOTA or LOL. Chat logs in these online games are notorious for their vulgar and obscene language. The model is most likely picking up on this strong connection, hence making it a good split for information gain.  
+
+
+
 ## Model Comparison
+
+Both models were compared by looking at the ROC curve each model produced on the test data. Both models did well on the test data, covering more than 80% of the area. However TF-IDF (87%) did a little bit better than the doc2vec (85%).  
+
+![jpg](images/testROC.jpg)
+
+While it may be tempting to say that TF-IDF approach is better, the opposite is true. The essential flaw behind TF-IDF is that it doesn't incorporate the meanings of the word. This meaning is lost through stopword removal and stemming. Instead it tries to infer meanings purely through the frequency of the stemmed word. Nonetheless it is surprising how well TF-IDF can do giving it's inherent shortcoming.
+
+A word embedding approach such as doc2vec is a more natural choice because it learns word vectors that incorporate the meaning of the word. This way the model can infer the intent behind the tweet. For example, the tweet *"I believe African Americans have less rights"* is classified as offensive even though none of the individual words are offensive.
+
+Another example of the advantage of a word embedding approach is this recent Donald Trump tweet: *"PAY TO PLAY POLITCS #CrookedHillary"*. This message is classified as offensive. However, when the caps are removed the tweet is classified as not offensive. This is very interesting because it shows that the model has learned that all caps (yelling) is offensive.
+
+
+
+
+
+
 
 ## Website
 
-## Assumptions
+Website [Link](http://tweetsafe.us-east-1.elasticbeanstalk.com/https://www.crowdflower.com/data-for-everyone/)
 
-There are a whole lot of assumptions in this analysis.
+A website was created using the doc2vec model. The website starts at a home page where the user can enter a tweet and see if it's offensive (red) or not (green). The list of similar subreddits will appear below the tweet and are colored red if they are offensive, green for not offensive
 
-#### Labeling Hate
-The biggest assumption I'm making has to do with labeling the data as hateful or not.
+Home Page: this is the home page
+![png](images/home.png)
 
-In this analysis, I used the subreddit the comment came from as the marker as hateful or not hateful. The benefit of this approach is that nobody needs to expose themselves to potentially hateful speech. However, this is not a very rigorous approach--that is, there are likely many comments which would not be considered hateful other than appearing in one of the hateful subreddits.
+Entering a Tweet: A user enters a tweet and clicks find
+![png](images/findingTweet.png)
 
-I relied on the assumption that hateful and not-hateful data would both contain controversial information and back-and-forth exchanges between members. This may account for irony and sarcasm as well, if those appear in both hateful and not hateful subreddits.
-
-#### Multiple simultaneous categories are not accounted for;
-The categorization may be fluid as well. Certainly, people can express hate in multiple dimensions simultaneously (e.g. "That chink bitch"), but this model will only predict one category.
-
-In the above example, I suspect that since there are more hateful comments in the gender category to train the model, that is the category the model will predict.
+A Good Tweet: if the tweet is not offensive than it will show up as green. Below the tweet are the 11 most similar subreddits to that tweet
+![png](images/goodword.png)
 
 
-#### Potentially incorrect categorization
-I included hateful speech regarding sexual orientation as part of hateful speech against gender. This is not entirely appropriate, but the relatively small number of hateful comments I found against sexual orientation, combined with expected conflation between gender and sexual orientation by those who are hateful against them, made me feel grudgingly comfortable including sexual orientation into the gender hate category.
-
-
-#### Selecting Subreddits
-I selected the subreddits manually. I researched what potentially hateful subreddits were, starting with some googling. Among the sources were news articles which discussed the revision of anti-harassment policy in the months after May 2015, which I took to be a good indicator of potential hate speech.
-
-I started with a list of about 70 potientially hateful  subreddits. I examined these subreddits in the May 2015 comments database, and checked that the subreddit had more than 100 comments and that it was actually a hateful subreddit. These led me to the final list of
-11 hateful subreddits with over 500,000 comments in them.
-
-I then wanted to choose subreddits which would cover similar content while being strictly moderated to remove any hateful speech. I also wanted to include some general subreddits which would have a lot of arguments and cover general non-hateful speech. This let me to the final list of non-hateful subreddits, of just over a million comments.
-
-#### The labeling approach not taken:
-A more rigorous way to approach labeling is to use crowdsourcing tools like Amazon Mechanical Turk or Crowdflower, to have people read and label comments individually. I had pursued this approach; however, I wasn't satisfied with this system for the project. There were two main reasons: the initial model based on the subreddit labeling method performed better than I expected, and also the costs for manual labeling
-
-The main reason this approach was abandoned was cost concerns--without a budget for the project, I wanted to keep costs minimal.
-
-It cost about $8 for a set of 100 comments to be labeled three times by different people. Of these, nearly 2/3 were labeled as "not hateful," despite the comments originating from only hateful subreddits and screening for comment length. Continuing at this rate, it would be over $100 for a corpus of 2000 labeled comments, of which perhaps a third would be considered hateful.
-
-
-#### Speech is not uniform
-
-Another large assumption is that the hate speech encountered on reddit is similar to hate speech in general. This may be very wrong--it may be that there are site-specific or subreddit-specific phrases the subreddit(s) involved, not hate speech generally. For example, on /r/fatpeoplehate, the term "hamplanet" was often used when discussing larger-shaped people. This term appears to originate, or at least be popularized by reddit, though Urban Dictionary's definitions do not reference the site.
-
-
-## References
-
+A Bad Tweet: if the tweet is offensive than it will show up as red.
+![png](images/badword.png)
 
 
 
 ## Acknowledgements
 
-- My instructors & peers in the Galvanize Data Science Immersive program.
-- Reddit user Stuck_In_the_Matrix for originally scraping & posting the comments. His/her post originally got me thinking about the possibilities in the reddit comment data set.
-- Kaggle for hosting the May 2015 comments in a convenient format.
-- Reddit user fhoffa for uploading the comments to google big query for easy web-based access of comments
-- The people who have spent time developing sci-kit learn, NLP, XGBoost and the many tools I relied on.
+*If I have seen farther it is by standing on the shoulders of Giants.*
+
+-Issac Newton
+
+I'm extremely proud of the work that I've produced for my capstone project. However there is no way I would have been able to do so much in two weeks if it weren't for the following people.
+
+- [Emily Y. Spahn](https://github.com/eyspahn/OnlineHateSpeech): For her brilliant idea of using subreddit labels as a proxy for offensiveness. Her work was the basis for my project.
+- [Jose Marcial Portilla](https://github.com/jmportilla/Reddit2Vec): For using doc2vec to predict subreddit labels.
+- My instructors Lee Murray, Darren Reger and Ivan Corneillet
+- My DSR Nathanael Robertson
+- The creators of [gensim](https://en.wikipedia.org/wiki/Gensim) for creating an amazing python implementation of doc2vec

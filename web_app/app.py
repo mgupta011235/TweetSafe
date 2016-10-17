@@ -12,6 +12,8 @@ import numpy as np
 from scipy.spatial.distance import cosine
 from nltk.tokenize import PunktSentenceTokenizer
 
+
+
 ###########################################################################
 # tokenization code
 
