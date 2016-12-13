@@ -9,9 +9,9 @@ TweetSafe is a Doc2Vec model used to classify tweets as either offensive or not.
 - [Motivation](https://github.com/mgupta011235/TweetSafe#motivation)
 - [Data](https://github.com/mgupta011235/TweetSafe#data)
 - [Doc2Vec Model](https://github.com/mgupta011235/TweetSafe#doc2vec)
-- [TF-IDF Model](https://github.com/mgupta011235/TweetSafe#motivation)
-- [Model Comparison](https://github.com/mgupta011235/TweetSafe#motivation)
-- [Website](https://github.com/mgupta011235/TweetSafe#motivation)
+- [TF-IDF Model](https://github.com/mgupta011235/TweetSafe#tf-idf)
+- [Model Comparison](https://github.com/mgupta011235/TweetSafe#model)
+- [Website](https://github.com/mgupta011235/TweetSafe#website)
 - [Acknowledgements](https://github.com/mgupta011235/TweetSafe#acknowledgements)
 
 
@@ -182,7 +182,7 @@ Another example of the advantage of a word embedding approach is this recent Don
 
 ## Website
 
-Website [Link](http://tweetsafe.us-east-1.elasticbeanstalk.com/https://www.crowdflower.com/data-for-everyone/)
+Website [Link](http://tweetsafe.us-east-1.elasticbeanstalk.com/)
 
 A website was created using the doc2vec model. The website starts at a home page where the user can enter a tweet and see if it's offensive (red) or not (green). The list of similar subreddits will appear below the tweet and are colored red if they are offensive, green for not offensive
 
